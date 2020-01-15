@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang Sync.Map 源码分析">
+<meta property="og:url" content="http://yoursite.com/2019/12/11/golang/sync-map-inside/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-01-07T14:07:04.752Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Golang Sync.Map 源码分析">
+<meta name="twitter:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/12/11/golang/sync-map-inside/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Golang Sync.Map 源码分析 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/11/golang/sync-map-inside/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Golang Sync.Map 源码分析
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-12-11 22:10:01" itemprop="dateCreated datePublished" datetime="2019-12-11T22:10:01+08:00">2019-12-11</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的<code>syn.map</code>。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang <code>sync.map</code>是如何实现线程安全的呢？</p>
+<h4 id="一、原理"><a href="#一、原理" class="headerlink" title="一、原理"></a>一、原理</h4><p>通过2个map（read、dirty）来实现读写分离，read、dirty 指向同一个entity。<a id="more"></a></p>
+<ul>
+<li>读数据(Load)：首先从read map中读（无锁），如果不存在，则到dirty map中读（加锁）。</li>
+<li>存数据(Store)：首先查找数据是否在read map中，如果在则更新entity（无锁）；否则在dirty map中查找，如果存在则更新，不存在则新建key（有锁）。</li>
+<li>删除数据(Delete)：如果数据在read map中找到，则直接把<code>entity.p</code>置为nil(无锁)；如果read map中不存在则在dirty map中查找，若找到则删除（有锁），并把<code>entity.p</code>置为nil(无锁)。</li>
+<li>dirty map提拔为read map<br>在read map中访问数据时，当miss次数&gt;=len(m.dirty)时，会把dirty map提拔为read map(直接修改read map的指针指向dirty map), 并把dirty map置为nil。</li>
+<li>延迟删除<br>删除数据时，如果在read map中找到，并不会立即删除entity；而是把key对应的<code>entity.p</code>置为nil，并在下次构建dirty map时把值为nil的p设为expunged。这个key在read map中会一直存在，直到下次有相同key的数据存入时指向新的value。<br>从上面可以看出：操作read map中的数据，无论是读(Load)、存(Store, 如果key在read map中，则直接更新entity，否则转为修改dirty)、删除(Delete,同Store)都不需要加锁(通过CAS(自旋转锁)实现 <a href="https://zh.wikipedia.org/wiki/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2" target="_blank" rel="noopener">参考</a>)，但对dirty map的所有操作都是加锁的。下面结合源码来看它是如何实现的。</li>
+</ul>
+<h4 id="二、源码"><a href="#二、源码" class="headerlink" title="二、源码"></a>二、源码</h4><h5 id="1-1-sync-map结构体定义"><a href="#1-1-sync-map结构体定义" class="headerlink" title="1.1 sync.map结构体定义"></a>1.1 <code>sync.map</code>结构体定义</h5><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//go1.12.7</span></span><br><span class="line"><span class="keyword">type</span> Map <span class="keyword">struct</span> &#123;</span><br><span class="line">    mu Mutex <span class="comment">//主要用于对dirty map的操作</span></span><br><span class="line">    read atomic.Value <span class="comment">// read map</span></span><br><span class="line">    dirty <span class="keyword">map</span>[<span class="keyword">interface</span>&#123;&#125;]*entry <span class="comment">//dirty map</span></span><br><span class="line">    misses <span class="keyword">int</span> <span class="comment">//操作数据时,若read map中不存在则misses+1,当miss次数&gt;=len(m.dirty)时，会把dirty map提拔为read map</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> readOnly <span class="keyword">struct</span> &#123;</span><br><span class="line">    m       <span class="keyword">map</span>[<span class="keyword">interface</span>&#123;&#125;]*entry</span><br><span class="line">    amended <span class="keyword">bool</span> <span class="comment">//如果dirty map中包含read map中不存在的数据，则为true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> entry <span class="keyword">struct</span> &#123;</span><br><span class="line">    p unsafe.Pointer <span class="comment">// 指向具体数据</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-2-关键函数"><a href="#1-2-关键函数" class="headerlink" title="1.2 关键函数"></a>1.2 关键函数</h5><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//如果存在key，则返回对应的value, 如果不存在返回nil, ok表示是否找到值</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">Load</span><span class="params">(key <span class="keyword">interface</span>&#123;&#125;)</span> <span class="params">(value <span class="keyword">interface</span>&#123;&#125;, ok <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    read, _ := m.read.Load().(readOnly)</span><br><span class="line">    e, ok := read.m[key]</span><br><span class="line">    <span class="keyword">if</span> !ok &amp;&amp; read.amended &#123;<span class="comment">//在read map中找到该key，则直接返回value；如果不存在且dirty map中存在read map中没有的数据(amended==true),则去dirty map中找</span></span><br><span class="line">        m.mu.Lock()</span><br><span class="line">        <span class="comment">//sync.map操作是并发的，在加锁前dirty map可能已经被提拔为read map，所以加锁后再重新检测一次</span></span><br><span class="line">        read, _ = m.read.Load().(readOnly)</span><br><span class="line">        e, ok = read.m[key]</span><br><span class="line">        <span class="keyword">if</span> !ok &amp;&amp; read.amended &#123;</span><br><span class="line">            e, ok = m.dirty[key]</span><br><span class="line">            <span class="comment">// 不管dirty map中是否存在key,都记1次miss</span></span><br><span class="line">            m.missLocked()</span><br><span class="line">        &#125;</span><br><span class="line">        m.mu.Unlock()</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !ok &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> e.load()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">missLocked</span><span class="params">()</span></span> &#123;</span><br><span class="line">    m.misses++</span><br><span class="line">    <span class="keyword">if</span> m.misses &lt; <span class="built_in">len</span>(m.dirty) &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//当misses次数&gt;=len(m.dirty),提拔dirty为read, 并把dirty置为nil, misses归0</span></span><br><span class="line">    m.read.Store(readOnly&#123;m: m.dirty&#125;)</span><br><span class="line">    m.dirty = <span class="literal">nil</span></span><br><span class="line">    m.misses = <span class="number">0</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *entry)</span> <span class="title">load</span><span class="params">()</span> <span class="params">(value <span class="keyword">interface</span>&#123;&#125;, ok <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    p := atomic.LoadPointer(&amp;e.p) <span class="comment">//取key对应entry的实际值</span></span><br><span class="line">    <span class="keyword">if</span> p == <span class="literal">nil</span> || p == expunged &#123;<span class="comment">//如果指向值为nil或expunged返回nil</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> *(*<span class="keyword">interface</span>&#123;&#125;)(p), <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//设置key的value值</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">Store</span><span class="params">(key, value <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    <span class="comment">//如果key在read map中且不为expunged，则直接更新</span></span><br><span class="line">    read, _ := m.read.Load().(readOnly)</span><br><span class="line">    <span class="keyword">if</span> e, ok := read.m[key]; ok &amp;&amp; e.tryStore(&amp;value) &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    m.mu.Lock()</span><br><span class="line">    <span class="comment">//如果read map中不存在，则在dirty中查找。在加锁前dirty map可能已经被提拔为read map</span></span><br><span class="line">    read, _ = m.read.Load().(readOnly)</span><br><span class="line">    <span class="keyword">if</span> e, ok := read.m[key]; ok &#123;</span><br><span class="line">        <span class="keyword">if</span> e.unexpungeLocked() &#123; </span><br><span class="line">            <span class="comment">//如果entity.p == expunged，dirty map中必然不存在此key（因为expunged是在提报dirty时设置的，当有相同key的数据重新加入后，entity.p必然指向新的value），把entity.p设为nil，并把映射加入dirty map</span></span><br><span class="line">            m.dirty[key] = e</span><br><span class="line">        &#125;</span><br><span class="line">        e.storeLocked(&amp;value)<span class="comment">//更新entity.p指向value地址</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> e, ok := m.dirty[key]; ok &#123;<span class="comment">//如果read map中不存在，dirty map存在，则直接更新entity.p</span></span><br><span class="line">        e.storeLocked(&amp;value)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;<span class="comment">//read map, dirty map中都不存在该key</span></span><br><span class="line">        <span class="keyword">if</span> !read.amended &#123;</span><br><span class="line">            <span class="comment">//提拔后首次往read map中加入新的key值时，拷贝read map中entity.p不为nil的值到dirty map，并把为nil的entity.p置为expunged（见dirtyLocked()）</span></span><br><span class="line">            m.dirtyLocked()</span><br><span class="line">            m.read.Store(readOnly&#123;m: read.m, amended: <span class="literal">true</span>&#125;)</span><br><span class="line">        &#125;</span><br><span class="line">        m.dirty[key] = newEntry(value)</span><br><span class="line">    &#125;</span><br><span class="line">    m.mu.Unlock()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">dirtyLocked</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> m.dirty != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    read, _ := m.read.Load().(readOnly)</span><br><span class="line">    m.dirty = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">interface</span>&#123;&#125;]*entry, <span class="built_in">len</span>(read.m))</span><br><span class="line">    <span class="keyword">for</span> k, e := <span class="keyword">range</span> read.m &#123;</span><br><span class="line">        <span class="keyword">if</span> !e.tryExpungeLocked() &#123;</span><br><span class="line">            m.dirty[k] = e</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 删除指定key</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">Delete</span><span class="params">(key <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    read, _ := m.read.Load().(readOnly)</span><br><span class="line">    e, ok := read.m[key]</span><br><span class="line">    <span class="keyword">if</span> !ok &amp;&amp; read.amended &#123; <span class="comment">//跟Load, Store一样，双重检测</span></span><br><span class="line">        m.mu.Lock()</span><br><span class="line">        read, _ = m.read.Load().(readOnly)</span><br><span class="line">        e, ok = read.m[key]</span><br><span class="line">        <span class="keyword">if</span> !ok &amp;&amp; read.amended &#123;</span><br><span class="line">            <span class="built_in">delete</span>(m.dirty, key) <span class="comment">//如果read map中不存在key，则在直接在dirty map中删除，在dirty map中存不存在不重要，存在则删除，不存在执行delete也没问题。</span></span><br><span class="line">        &#125;</span><br><span class="line">        m.mu.Unlock()</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ok &#123;</span><br><span class="line">        e.<span class="built_in">delete</span>()<span class="comment">//把entity.p置为nil</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(e *entry)</span> <span class="title">delete</span><span class="params">()</span> <span class="params">(hadValue <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        p := atomic.LoadPointer(&amp;e.p)</span><br><span class="line">        <span class="keyword">if</span> p == <span class="literal">nil</span> || p == expunged &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> atomic.CompareAndSwapPointer(&amp;e.p, p, <span class="literal">nil</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//遍历sync.map</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Map)</span> <span class="title">Range</span><span class="params">(f <span class="keyword">func</span>(key, value <span class="keyword">interface</span>&#123;&#125;)</span> <span class="title">bool</span>)</span> &#123;</span><br><span class="line">    <span class="comment">//如果read.amended为false直接遍历read map即可，否则提拔dity map为read map后再遍历read map</span></span><br><span class="line">    read, _ := m.read.Load().(readOnly)</span><br><span class="line">    <span class="keyword">if</span> read.amended &#123;</span><br><span class="line">        m.mu.Lock()</span><br><span class="line">        read, _ = m.read.Load().(readOnly)</span><br><span class="line">        <span class="keyword">if</span> read.amended &#123;</span><br><span class="line">            read = readOnly&#123;m: m.dirty&#125;</span><br><span class="line">            m.read.Store(read)</span><br><span class="line">            m.dirty = <span class="literal">nil</span></span><br><span class="line">            m.misses = <span class="number">0</span></span><br><span class="line">        &#125;</span><br><span class="line">        m.mu.Unlock()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> k, e := <span class="keyword">range</span> read.m &#123;</span><br><span class="line">        v, ok := e.load()</span><br><span class="line">        <span class="keyword">if</span> !ok &#123;</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> !f(k, v) &#123;</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">在源码中，entity.p的值容易引起混淆：</span><br><span class="line">entity.p == <span class="literal">nil</span> 时：值已经被删除(可重新设置)，会在下次提拔dirty <span class="keyword">map</span>时置为read <span class="keyword">map</span>时置为expunged</span><br><span class="line">entity.p == expunged 时：不可直接更新entity.p值(因为dirty中已经删除映射)，必须先把它设为<span class="literal">nil</span>，并在dirty <span class="keyword">map</span>中加入映射，再更新entity.p为新value。</span><br></pre></td></tr></table></figure>
+
+<h4 id="三、适用场景"><a href="#三、适用场景" class="headerlink" title="三、适用场景"></a>三、适用场景</h4><p>从源码可以看出<code>sync.map</code>的优点和缺点都很明显：</p>
+<ul>
+<li>优点：<br>并发读时，大部分时候不需要加锁，效率很高。<br>并发写时，如果只对value更新，也不需要加锁。</li>
+<li>缺点：<br>频繁有新key加入时，不但要加锁而且还会加快dirty map提拔为read map，并在下次构建dirty map时拷贝read map<br>由此可见，<code>sync.map</code>适合于1次写入，多次读取(包括更新value)的场景，比如定时排行榜数据缓存；如果在读写都很频繁的场景，<code>sync.map</code>并不适合，这时可以用数组+map+mutex的方式来实现。<a href="https://github.com/orcaman/concurrent-map" target="_blank" rel="noopener">例如</a></li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/20/protocal/tcpip_summary/" rel="next" title="TCP/IP学习笔记">
+                <i class="fa fa-chevron-left"></i> TCP/IP学习笔记
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/01/07/memory/golang-memory/" rel="prev" title="Golang内存分配及回收">
+                Golang内存分配及回收 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、原理"><span class="nav-text">一、原理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、源码"><span class="nav-text">二、源码</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-sync-map结构体定义"><span class="nav-text">1.1 sync.map结构体定义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-关键函数"><span class="nav-text">1.2 关键函数</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、适用场景"><span class="nav-text">三、适用场景</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

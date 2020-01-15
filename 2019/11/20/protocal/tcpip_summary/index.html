@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP&#x2F;IP学习笔记">
+<meta property="og:url" content="http://yoursite.com/2019/11/20/protocal/tcpip_summary/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_pack_format.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/ip_pack_format.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_handshake.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_handshake_tcpdump.png">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_rtt.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_win_move.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_slide_win.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnetion_dump.png">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_status_machine.jpg">
+<meta property="og:updated_time" content="2020-01-07T14:07:04.752Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TCP&#x2F;IP学习笔记">
+<meta name="twitter:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+<meta name="twitter:image" content="http://yoursite.com/images/tcpip/tcp_pack_format.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2019/11/20/protocal/tcpip_summary/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>TCP/IP学习笔记 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/20/protocal/tcpip_summary/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TCP/IP学习笔记
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-11-20 16:54:06" itemprop="dateCreated datePublished" datetime="2019-11-20T16:54:06+08:00">2019-11-20</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/protocal/" itemprop="url" rel="index"><span itemprop="name">protocal</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。</p>
+<h4 id="一、名词解释"><a href="#一、名词解释" class="headerlink" title="一、名词解释"></a>一、名词解释</h4><ul>
+<li>MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规定MTU的最大值为1500字节。MTU = IP包头 + TCP包头 + MSS，一般建议MSS&lt;1400字节(1500-IP包头20-TCP包头20-可选项)，如果超过1400字节，就可能产生ip分片。</li>
+<li>MSS（TCP Maximum Segment Size，TCP最大报文段长度)：表示TCP一次性可往另一端发送数据的最大数据长度（不包含包头）。如果单次发送数据超过MSS,且没有设置DF(Dont’t Frament)标志，就会产生IP分片。<a id="more"></a></li>
+<li>wscale(扩大窗口选项)：使得窗口最大值可以从16bit增加到32bit。在图4 第1行中，客户端的win:64240, wscale:8,扩大后的窗口大小为：64240*x2^8 = 16445440 <a href="https://accedian.com/enterprises/blog/tcp-receive-window-everything-need-know/" target="_blank" rel="noopener">原文</a></li>
+<li>MSL（Maximum Segment Lifetime，报文最大生存时间）：任何报文在网络上存在的最长时间，超过这个时间报文将被丢弃，linux上默认为30s。在IP层有个叫TTL的计数，每经过一个路由器就会减1，为0时，包会被路由器丢弃。</li>
+</ul>
+<h4 id="二、建立连接"><a href="#二、建立连接" class="headerlink" title="二、建立连接"></a>二、建立连接</h4><h5 id="1-TCP数据报格式"><a href="#1-TCP数据报格式" class="headerlink" title="1.TCP数据报格式"></a>1.TCP数据报格式</h5><img width="800" height="200" src="/images/tcpip/tcp_pack_format.jpg">
+
+<ul>
+<li>源端口号：数据发送方的端口号</li>
+<li>目的端口号：数据接收方的端口号</li>
+<li>序号(seq)：TCP是可靠的传输协议，会对每个包编号，便于确认和重传。</li>
+<li>确认序号(ack)：收到的序号+1(ack=seq+1),只有ACK标志位为1时，确认序号字段才有效。</li>
+<li>标志位：SYN：发起一个新连接; ACK：确认序号; FIN：释放一个连接; RST：重置连接; </li>
+<li>PSH：接收方应该尽快将这个报文交给应用层。</li>
+<li>16位窗口大小：用于动态反映接收端读缓冲大小。</li>
+<li>数据：应用层数据</li>
+</ul>
+<h5 id="2-IP数据报格式"><a href="#2-IP数据报格式" class="headerlink" title="2.IP数据报格式"></a>2.IP数据报格式</h5><img width="500" height="200" src="/images/tcpip/ip_pack_format.jpg">
+
+<ul>
+<li>IP数据=TCP层包头+数据</li>
+</ul>
+<h5 id="3-三次握手"><a href="#3-三次握手" class="headerlink" title="3. 三次握手"></a>3. 三次握手</h5><img width="500" height="200" src="/images/tcpip/tcp_handshake.jpg">
+
+<h6 id="1-1-握手流程："><a href="#1-1-握手流程：" class="headerlink" title="1.1 握手流程："></a>1.1 握手流程：</h6><p>1.客户端服务器都处于关闭(CLOSE)状态<br>2.服务器开始监听（LISTEN）<br>3.客户端发送连接请求(SYN)进入(SYN-SENT)状态<br>4.服务器收到SYN并回复SYN+ACK进入（SYN-RCVD）状态<br>5.客户端收到ACK+SYN并发送ACK进入（ESTABLISHED）状态<br>6.服务器收到ACK进入（ESTABLISHED）状态</p>
+<h6 id="1-2-握手抓包分析"><a href="#1-2-握手抓包分析" class="headerlink" title="1.2 握手抓包分析"></a>1.2 握手抓包分析</h6><img width="1000" height="800" src="/images/tcpip/tcp_handshake_tcpdump.png">
+
+<ul>
+<li>第1行：客户端向服务器发送SYN，除seq和win以外，options中包含了2个重要内容:</li>
+<li>第2行：服务器向客户端发送ACK，SYN, win, mss, wscale</li>
+<li>第3行：客户端向服务器发送ACK,win。</li>
+<li>注意：序号，win是时时变化的，每个包都要发送，而mss, wscale只会在建立连接时告知对方，建立连接后不会变（当然mss不是绝对不变，这跟每个包经过的路由器的mtu相关）。</li>
+</ul>
+<h4 id="三、传输数据"><a href="#三、传输数据" class="headerlink" title="三、传输数据"></a>三、传输数据</h4><p>连接建立好后，双方就可以正传输数据了，在传输数据过程中会涉及到数据包的分片、重传、流量控制等。</p>
+<h5 id="1-1-缓冲区"><a href="#1-1-缓冲区" class="headerlink" title="1.1 缓冲区"></a>1.1 缓冲区</h5><p>每条TCP连接的双端都会有一个发送缓冲区和接收缓冲区，大小可调整(Linux下可以通过 cat /proc/sys/net/ipv4/tcp_wmem 和 cat /proc/sys/net/ipv4/tcp_rmem查看读写缓冲区的大小, setsockopt 函数设置SO_RCVBUF和SO_SNDBUF选项来分别调整SOCKET读缓冲区和写缓冲区的大小)。</p>
+<ul>
+<li>send:当应用层调用send()函数后，会把待发送的数据拷贝到发送缓冲区中，但数据何时发，每次发送的大小，分为多少次发送对应用层来说是透明的。所以send()函数的返回值并不是向网络中发送了多少数据，而是向发送缓冲区拷贝的字节数。</li>
+<li>recv:从缓冲区中收数据,当接收方的传输层收到数据后，会把数据放到接收缓冲区中，并通知OS有数据可读，应用层调用recv()函数从接收缓冲区中拷贝数据到应用层，并没有从网络中收数据。</li>
+<li>当发送缓冲区满：调用send函数就会阻塞，直到缓冲区中有足够的空间能容纳本次send数据</li>
+<li>当接收缓冲区满：接收方的win大小会变为0，发送方传输层停止向接收方发数据，若发送方应用层还在继续发数据，就会把自己的发送缓冲区填满后阻塞。</li>
+</ul>
+<h5 id="1-2-IP分片"><a href="#1-2-IP分片" class="headerlink" title="1.2 IP分片"></a>1.2 IP分片</h5><p>TCP在传输数据时，对包的大小有限制，超过这个限制就会把数据拆分成多个包。MTU在建立连接时确定，这个值是由建立连接的数据包经过所有路由器的MTU最小值。(有兴趣可以登陆路由器控制台查看)</p>
+<ul>
+<li>IP分片的问题：如果单次发送数据大于MSS，链路层会把数据包拆分成多个&lt;=MSS分片再发送,发送过程中，只要有其中一个分片丢失，整个数据就会重传，这里没有断点续传，即使最后一个分片丢失，这个包的所有分片都会重传。所以单次发送数据尽量&lt;=MSS。 当然也不能分得太小，太小了效率会降低，毕竟包头是有开销。</li>
+</ul>
+<h5 id="1-3-拥塞控制与滑动窗口"><a href="#1-3-拥塞控制与滑动窗口" class="headerlink" title="1.3 拥塞控制与滑动窗口"></a>1.3 拥塞控制与滑动窗口</h5><p>TCP是面向连接的、可靠的传输协议，下面说说它是如何保证高效和可靠的。</p>
+<ul>
+<li><p>拥塞控制：拥塞控制目标是在拥塞发生时能及时发现并通过减少数据报文进入网络的速率和数量，达到防止网络拥塞的目的，这种机制可以确保网络大部分时间是可用的。拥塞控制的前提在于能发现有网络拥塞的迹象，TCP/IP协议栈的算法是通过分组发送超时和收到对端对某个分组的重复ACK。</p>
+</li>
+<li><p>慢启动：当新链接上的数据进入一个拥塞状况不可预知的网络时，贸然过快的数据发送可能会加重网络负担。TCP通过参数拥塞窗口（cwnd，Congestion Window)和慢启动门限（ssthresh，Slow Start Threashold）来决定向网络中发送数据的速度。算法如下：<br>  1.TCP链接建立好以后，cwnd初始化1MSS(一次能发送数据的大小为1MSS)。ssthresh初始化为65535字节；<br>  2.每当收到一个ACK，cwnd++，cwnd程线性上升;<br>  3.每当经过一个RTT（Round Trip Time，网络往返时间），cwnd = cwnd * 2，cwnd呈指数让升;<br>  4.当cwnd &gt;= ssthresh时，就会进入”拥塞避免算法”;</p>
+</li>
+<li><p>拥塞避免：只要判断网络出现拥塞，就要把慢启动开始门限(ssthresh)设置为发送窗口的一半(win&gt;2时)，cwnd(拥塞窗口)设置为1。<br>  注意：步骤2，3发送数据量不能超过cwnd和接收方通告的TCP窗口大小(win),现在大部分linux中，TCP拥塞窗口(cwnd)默认值为10,即第一个RTT最多可发送10k数据，如果初始值为1，发送10k数据大概需要3个RTT，如下图所示。</p>
+  <img width="300" height="100" src="/images/tcpip/tcp_rtt.jpg">
+</li>
+<li><p>滑动窗口:在建立TCP连接三次握手时，连接的双方会根据自己接收缓冲区的大小初始化接收窗口，并发给对方。双方根据对方的接收窗口大小初始化自己的发窗口。滑动窗口可确保发送方的每个数据都正确到达接收方。</p>
+</li>
+<li><p>窗口滑动相关术语：<br>  1.TCP窗口左边沿向右边沿靠近称为窗口”合拢”，发生在数据被发送和确认时。如果左右边沿重合，则形成一个零窗口，此时发送方不能再发送任何数据；<br>  2.TCP窗口右边沿向右移动称为窗口”张开”，发生在接收方应用层已经读取了已确认过的数据并释放了TCP接收缓冲区时；<br>  3.TCP窗口右边沿向左移动称为窗口”收缩”，RFC强烈建议避免使用这种方式；</p>
+  <img width="400" height="200" src="/images/tcpip/tcp_win_move.jpg"></li>
+<li><p>发送缓冲区和发送窗口分为四个部分：<br>  1.已发送并收到ACK确认的数据（即已成功到达客户端），0-3部分；<br>  2.已发送还未收到ACK确认的数据（即已发送但尚未能确认已被客户端成功收到）4-5部分；<br>  3.处于发送窗口中还未发出的数据（即对端接收窗口通告还可容纳的部分），6-11部分；<br>  4.处于发送窗口以外还未发出的数据（即对端接收窗口通告无法容纳的部分），12-15部分；</p>
+  <img width="500" height="200" src="/images/tcpip/tcp_slide_win.jpg">
+
+</li>
+</ul>
+<h4 id="四、断开连接"><a href="#四、断开连接" class="headerlink" title="四、断开连接"></a>四、断开连接</h4><h5 id="1-1-挥手流程"><a href="#1-1-挥手流程" class="headerlink" title="1.1 挥手流程"></a>1.1 挥手流程</h5><p>1.双方已经建立连接(ESTABLISHED)<br>2.客户端发送FIN后进入(FIN-WAIT-1)<br>3.服务器收到FIN后回复ACK进入(CLOSE-WAIT)<br>4.客户端收到ACK后进入(FIN-WAIT-2)<br>5.服务端发送ACK+FIN进入(LAST-ACK)<br>6.客户端收到ACK+FIN进入(TIME-WAIT(等待2MSL)后进入CLOSE状态)<br>7.服务端收到ACK进入(CLOSE)<br><img width="500" height="200" src="/images/tcpip/tcp_disconnection.jpg"></p>
+<p>之所以等待2MSL主要有2个原因：<br>    1. 2MSL可以确保在建立新连接前，老的报文在网络中消失<br>    2. 主动关闭方需要确保自己最后发送响应对端FIN的ACK能被对端收到，如果对端出现超时重传了FIN，则意味着自己上次发的ACK丢失了，那么自己还有机会再次发送ACK确认，乘以2就是为了给重传的ACK充裕的到达时间。</p>
+<h5 id="1-2-断开连接抓包"><a href="#1-2-断开连接抓包" class="headerlink" title="1.2 断开连接抓包"></a>1.2 断开连接抓包</h5><img width="1000" height="300" src="/images/tcpip/tcp_disconnetion_dump.png">
+
+<h5 id="1-3-TCP状态机"><a href="#1-3-TCP状态机" class="headerlink" title="1.3 TCP状态机"></a>1.3 TCP状态机</h5><img width="600" height="200" src="/images/tcpip/tcp_status_machine.jpg">
+
+<p>加黑加粗的部分，时序时序图的主要部分，阿拉伯数字的序号，是连接过程中的顺序，而大写中文数字的序号，是连接断开过程中的顺序。加粗的实线是客户端 A 的状态变迁，加粗的虚线是服务端 B 的状态变迁</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/30/golang/slice/" rel="next" title="Golang Slice 源码分析">
+                <i class="fa fa-chevron-left"></i> Golang Slice 源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/11/golang/sync-map-inside/" rel="prev" title="Golang Sync.Map 源码分析">
+                Golang Sync.Map 源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、名词解释"><span class="nav-text">一、名词解释</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、建立连接"><span class="nav-text">二、建立连接</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-TCP数据报格式"><span class="nav-text">1.TCP数据报格式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-IP数据报格式"><span class="nav-text">2.IP数据报格式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-三次握手"><span class="nav-text">3. 三次握手</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-握手流程："><span class="nav-text">1.1 握手流程：</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-握手抓包分析"><span class="nav-text">1.2 握手抓包分析</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、传输数据"><span class="nav-text">三、传输数据</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-缓冲区"><span class="nav-text">1.1 缓冲区</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-IP分片"><span class="nav-text">1.2 IP分片</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-拥塞控制与滑动窗口"><span class="nav-text">1.3 拥塞控制与滑动窗口</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#四、断开连接"><span class="nav-text">四、断开连接</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-挥手流程"><span class="nav-text">1.1 挥手流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-断开连接抓包"><span class="nav-text">1.2 断开连接抓包</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-TCP状态机"><span class="nav-text">1.3 TCP状态机</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
