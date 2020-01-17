@@ -365,7 +365,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-17 19:23:08" itemprop="dateModified" datetime="2020-01-17T19:23:08+08:00">2020-01-17</time>
+                <time title="修改时间：2020-01-17 23:01:12" itemprop="dateModified" datetime="2020-01-17T23:01:12+08:00">2020-01-17</time>
               
             
           </span>
@@ -418,9 +418,9 @@
 
       
         
-          <h4 id="一、互斥锁Mutex"><a href="#一、互斥锁Mutex" class="headerlink" title="一、互斥锁Mutex"></a>一、互斥锁Mutex</h4><p>互斥锁的基本思想就是通过自旋转的方式去拿锁，拿到则返回；没拿到则进入队列等待，等久了则切换为饥饿模式；如果是饥饿模式，unlock时直接把锁交给队首的gotoutine。</p>
+          <h4 id="一、互斥锁Mutex"><a href="#一、互斥锁Mutex" class="headerlink" title="一、互斥锁Mutex"></a>一、互斥锁Mutex</h4><p>互斥锁的基本思想就是通过自旋转的方式去拿锁，拿到则返回；没拿到则进入队列等待，等久了则切换为饥饿模式；如果是饥饿模式，unlock会直接把锁交给队首饥饿的gotoutine。</p>
 <h5 id="1-1-Mutex普通模式和饥饿模式的相互切换"><a href="#1-1-Mutex普通模式和饥饿模式的相互切换" class="headerlink" title="1.1 Mutex普通模式和饥饿模式的相互切换"></a>1.1 Mutex普通模式和饥饿模式的相互切换</h5><ul>
-<li>普通模式：需要拿锁的goroutine在队列(FIFO)中排队等待，被唤醒的goroutine会和新到来的goroutine<br>竞争mutex。新到来的goroutine因为已经在CPU上运行且数量可能很多，所以获得锁的机会明显要比唤醒的goroutine大。在这种情况下<br>被唤醒的goroutine会插入到等待队列前面，如果有goroutine等待时间超过1ms，就会把mutex切换成饥饿模式。
+<li>普通模式：需要拿锁的goroutine在队列(FIFO)中排队等待，被唤醒的goroutine会和新到来的goroutine竞争mutex。新到来的goroutine因为已经在CPU上运行且数量可能很多，所以获得锁的机会明显要比唤醒的goroutine大。在这种情况下被唤醒的goroutine会插入到等待队列前面，如果有goroutine等待时间超过1ms，就会把mutex切换成饥饿模式。
           <!--noindex-->
           
             <div class="post-button text-center">
