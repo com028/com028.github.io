@@ -365,7 +365,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-23 16:15:05" itemprop="dateModified" datetime="2020-01-23T16:15:05+08:00">2020-01-23</time>
+                <time title="修改时间：2020-01-27 08:56:54" itemprop="dateModified" datetime="2020-01-27T08:56:54+08:00">2020-01-27</time>
               
             
           </span>
@@ -418,28 +418,8 @@
 
       
         
-          <p>本文介绍2种常用的AOE技能目标选择器的实现方法，矩形区域和扇形区域。</p>
-<h4 id="一、矩形区域"><a href="#一、矩形区域" class="headerlink" title="一、矩形区域"></a>一、矩形区域</h4><p>有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接受击者之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：<br><img width="500" height="200" src="/images/aoe/relative-coordinate.png"></p>
-<p>如何判断点在矩形内呢？最简单的方法是判断t1.x &gt;= min(c1.x) &amp;&amp; t1.x &lt;= max(c2.x) &amp;&amp; t1.y &gt;= min(c1.y) &amp;&amp; t1.y &lt;= max(c1.y)为true则点在矩形内，否则在矩形外。但是这种方法只有在矩形平行坐标轴时成立，如果攻击者方向不平行坐标轴如图中C2。我们用上面的方法计算时t2与矩形C2的位置关系时，发现它在矩形中，这显示不正确。那该如何计算t2与矩形C2的位置关系呢?<br>如果把施法者p到受击者p2之间的向量看成是新的x轴方向（虚线所示的相对坐标系），被测试的点是不是能用上述方法判断呢？答案是肯定的。下面介绍如何把t2坐标转换到pp2为x轴的相对坐标系下的坐标，方法如下：</p>
-<ul>
-<li><p>根据余弦定理：a^2 = b^2 + c^2 - 2bccosθ<br>得：cosθ = b^2 + c^2 - a^2 / 2bc<br>其中：a为t2p2, b为pt2, c为pp2,θ为角t2pp2</p>
-</li>
-<li><p>极坐标定义：该坐标系统中任意位置可由一个夹角和一段相对原点(极点)的距离来表示</p>
-<img width="500" height="200" src="/images/aoe/polor-coordiate.png">
-
-
-</li>
-</ul>
-<p>根据极坐标与直角坐标转换公式可得：<br>假设t2的相对坐标为(tr.x, tr.y)则<br>tr.x = pt2costθ<br>tr.y = sqrt(pt2^2 - tr.x^2)<br>注：pt2就是公式是极坐标中的ρ<br><img width="500" height="200" src="/images/aoe/polor-coordiate.png"></p>
-<p>知道相对坐标，用平行坐标轴的算法很容易求出点是否是矩形内。</p>
-<h4 id="二、扇形区域"><a href="#二、扇形区域" class="headerlink" title="二、扇形区域"></a>二、扇形区域</h4><p>判断点是否在扇形中可以通过极坐标方式，本方介绍的方法是通过点积。<br>点积代数定义：a·b = a.x * b.x + a.y * b.y<br>点积几何定义：a·b = |a||b|cosθ (θ为ab之前的夹角)<br>a.x * b.x + a.y * b.y /(b.x^2+b.y^2)<br>如下图所行，u为施法者朝向，t为被攻击者坐标，θ为扇形角度的1/2, 下面我们要判断点t是否在扇形区域内。<br><img width="500" height="200" src="/images/aoe/polor-coordiate.png"><br>步骤：</p>
-<ol>
-<li>首先判断ot的距离是否&lt;扇形半径，若是进入第2步</li>
-<li>判断u与ot之前的夹角是否&lt;θ</li>
-</ol>
-<p>互斥锁的基本思想就是自旋转等待锁释放，拿到则返回；没拿到则进入队列等待，等久了则切换为饥饿模式；如果是饥饿模式，unlock会直接把锁交给队首饥饿的gotoutine。</p>
-<h5 id="1-1-Mutex普通模式和饥饿模式的相互切换"><a href="#1-1-Mutex普通模式和饥饿模式的相互切换" class="headerlink" title="1.1 Mutex普通模式和饥饿模式的相互切换"></a>1.1 Mutex普通模式和饥饿模式的相互切换</h5><ul>
-<li>普通模式：需要拿锁的goroutine在队列(FIFO)中排队等待，被唤醒的goroutine会和新到来的goroutine竞争mutex。新到来的goroutine因为已经在CPU上运行且数量可能很多，所以获得锁的机会明显要比唤醒的goroutine大。在这种情况下被唤醒的goroutine会插入到等待队列前面，如果有goroutine等待时间超过1ms，就会把mutex切换成饥饿模式。
+          <p>本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。</p>
+<h4 id="一、矩形区域"><a href="#一、矩形区域" class="headerlink" title="一、矩形区域"></a>一、矩形区域</h4><p>有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：<br><img width="500" height="200" src="/images/aoe/relative-coordinate.png"></p>
           <!--noindex-->
           
             <div class="post-button text-center">
@@ -451,7 +431,7 @@
           <!--/noindex-->
         
       
-    </li></ul></div>
+    </div>
 
     
 
@@ -565,7 +545,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-21 13:57:36" itemprop="dateModified" datetime="2020-01-21T13:57:36+08:00">2020-01-21</time>
+                <time title="修改时间：2020-01-22 05:57:36" itemprop="dateModified" datetime="2020-01-22T05:57:36+08:00">2020-01-22</time>
               
             
           </span>
@@ -746,7 +726,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-15 21:31:46" itemprop="dateModified" datetime="2020-01-15T21:31:46+08:00">2020-01-15</time>
+                <time title="修改时间：2020-01-16 13:31:46" itemprop="dateModified" datetime="2020-01-16T13:31:46+08:00">2020-01-16</time>
               
             
           </span>
@@ -926,7 +906,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+                <time title="修改时间：2020-01-08 14:07:04" itemprop="dateModified" datetime="2020-01-08T14:07:04+08:00">2020-01-08</time>
               
             
           </span>
@@ -1106,7 +1086,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+                <time title="修改时间：2020-01-08 14:07:04" itemprop="dateModified" datetime="2020-01-08T14:07:04+08:00">2020-01-08</time>
               
             
           </span>
@@ -1288,7 +1268,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+                <time title="修改时间：2020-01-08 14:07:04" itemprop="dateModified" datetime="2020-01-08T14:07:04+08:00">2020-01-08</time>
               
             
           </span>
@@ -1473,7 +1453,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-07 22:07:04" itemprop="dateModified" datetime="2020-01-07T22:07:04+08:00">2020-01-07</time>
+                <time title="修改时间：2020-01-08 14:07:04" itemprop="dateModified" datetime="2020-01-08T14:07:04+08:00">2020-01-08</time>
               
             
           </span>
@@ -1656,7 +1636,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-10 22:18:43" itemprop="dateModified" datetime="2020-01-10T22:18:43+08:00">2020-01-10</time>
+                <time title="修改时间：2020-01-11 14:18:42" itemprop="dateModified" datetime="2020-01-11T14:18:42+08:00">2020-01-11</time>
               
             
           </span>
@@ -1835,7 +1815,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-17 19:29:23" itemprop="dateModified" datetime="2020-01-17T19:29:23+08:00">2020-01-17</time>
+                <time title="修改时间：2020-01-18 11:29:22" itemprop="dateModified" datetime="2020-01-18T11:29:22+08:00">2020-01-18</time>
               
             
           </span>
