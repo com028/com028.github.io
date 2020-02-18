@@ -108,7 +108,7 @@
 <meta property="og:image" content="http://yoursite.com/images/aoe/polor-to-cartesian.png">
 <meta property="og:image" content="http://yoursite.com/images/aoe/point-in-sector.png">
 <meta property="og:image" content="http://yoursite.com/images/aoe/sin-cos-tan-graph.png">
-<meta property="og:updated_time" content="2020-01-27T00:56:54.000Z">
+<meta property="og:updated_time" content="2020-01-26T14:16:18.520Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AOE技能目标选择器">
 <meta name="twitter:description" content="本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。 一、矩形区域有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：">
@@ -389,7 +389,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-27 08:56:54" itemprop="dateModified" datetime="2020-01-27T08:56:54+08:00">2020-01-27</time>
+                <time title="修改时间：2020-01-26 22:16:18" itemprop="dateModified" datetime="2020-01-26T22:16:18+08:00">2020-01-26</time>
               
             
           </span>
@@ -449,15 +449,15 @@
 <li><p>根据余弦定理：<code>a^2 = b^2 + c^2 - 2bccosθ</code><br>得：<code>cosθ = b^2 + c^2 - a^2 / 2bc</code><br>其中：<code>a</code>为<code>t2p2, b为pt2, c为pp2,θ为角t2pp2</code></p>
 </li>
 <li><p>极坐标定义：该坐标系统中任意位置可由一个夹角和一段相对原点(极点)的距离来表示</p>
-<img width="500" height="200" src="/images/aoe/polor-coordiate.png">
+<img width="350" height="200" src="/images/aoe/polor-coordiate.png">
 
 
 </li>
 </ul>
 <p>根据极坐标与直角坐标转换公式可得：<br>假设t2的相对坐标为<code>(tr.x, tr.y)</code>则
-<code>tr.x = pt2costθ</code><br><code>tr.y = sqrt(pt2^2 - tr.x^2)</code><br>注：pt2就是公式中的ρ<br><img width="500" height="200" src="/images/aoe/polor-to-cartesian.png"></p>
+<code>tr.x = pt2costθ</code><br><code>tr.y = sqrt(pt2^2 - tr.x^2)</code><br>注：pt2就是公式中的ρ<br><img width="350" height="200" src="/images/aoe/polor-to-cartesian.png"></p>
 <p>知道相对坐标，用平行坐标轴的算法很容易求出点是否是矩形内。</p>
-<h4 id="二、扇形区域"><a href="#二、扇形区域" class="headerlink" title="二、扇形区域"></a>二、扇形区域</h4><p>判断点是否在扇形中的方法很多，本文介绍通过点积来判断:<br>点积代数定义：<code>a·b = a.x * b.x + a.y * b.y</code><br>点积几何定义：<code>a·b = |a||b|cosθ</code> (θ为ab之前的夹角)<br>如下图所行，u为施法者朝向，t为被攻击者坐标，θ为扇形角度的1/2, 下面我们要判断点t是否在扇形区域内。<br><img width="500" height="200" src="/images/aoe/point-in-sector.png"><br>步骤：</p>
+<h4 id="二、扇形区域"><a href="#二、扇形区域" class="headerlink" title="二、扇形区域"></a>二、扇形区域</h4><p>判断点是否在扇形中的方法很多，本文介绍通过点积来判断:<br>点积代数定义：<code>a·b = a.x * b.x + a.y * b.y</code><br>点积几何定义：<code>a·b = |a||b|cosθ</code> (θ为ab之前的夹角)<br>如下图所行，u为施法者朝向，t为被攻击者坐标，θ为扇形角度的1/2, 下面我们要判断点t是否在扇形区域内。<br><img width="350" height="200" src="/images/aoe/point-in-sector.png"><br>步骤：</p>
 <ul>
 <li>首先判断ot的距离是否&lt;扇形半径，若是进入第2步</li>
 <li>判断u与ot之前的夹角θt是否&lt;θ,方法如下：<br>因为cosθ在[0,π]区间单调递减，如下图所示：<img width="500" height="200" src="/images/aoe/sin-cos-tan-graph.png">
@@ -505,6 +505,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/02/15/game/behavior-tree/" rel="prev" title="游戏中的AI-行为树">
+                游戏中的AI-行为树 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -573,7 +577,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-count">10</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>

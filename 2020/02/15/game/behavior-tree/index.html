@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="游戏中，常见用AI实现方式有2种，状态机和行为树。下面主要简介绍行为树，跟状态机相比，行为树虽然优点很突出，但也不完美；在优化行为树的部分需要用到状态机，所以还是简单介绍一下状态机。 一、案例描述山贼的AI需求描述如下：  视野内没有敌人则继续巡逻 视野出现敌人则走过去攻击敌人 当自己血量 &amp;lt; 20% 则逃跑  下面将用状态机和行为树来描述山贼的AI 二、状态机  上图是用状态机来描述山贼的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="游戏AI-行为树">
+<meta property="og:url" content="http://yoursite.com/2020/02/15/game/behavior-tree/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="游戏中，常见用AI实现方式有2种，状态机和行为树。下面主要简介绍行为树，跟状态机相比，行为树虽然优点很突出，但也不完美；在优化行为树的部分需要用到状态机，所以还是简单介绍一下状态机。 一、案例描述山贼的AI需求描述如下：  视野内没有敌人则继续巡逻 视野出现敌人则走过去攻击敌人 当自己血量 &amp;lt; 20% 则逃跑  下面将用状态机和行为树来描述山贼的AI 二、状态机  上图是用状态机来描述山贼的">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/behavior/behavior-tree-fsm.png">
+<meta property="og:image" content="http://yoursite.com/images/behavior/behavior-sequences.png">
+<meta property="og:image" content="http://yoursite.com/images/behavior/behavior-selector.png">
+<meta property="og:image" content="http://yoursite.com/images/behavior/behavior-parellel.png">
+<meta property="og:image" content="http://yoursite.com/images/behavior/behavior-behaviorAI.png">
+<meta property="og:updated_time" content="2020-02-17T13:30:17.322Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="游戏AI-行为树">
+<meta name="twitter:description" content="游戏中，常见用AI实现方式有2种，状态机和行为树。下面主要简介绍行为树，跟状态机相比，行为树虽然优点很突出，但也不完美；在优化行为树的部分需要用到状态机，所以还是简单介绍一下状态机。 一、案例描述山贼的AI需求描述如下：  视野内没有敌人则继续巡逻 视野出现敌人则走过去攻击敌人 当自己血量 &amp;lt; 20% 则逃跑  下面将用状态机和行为树来描述山贼的AI 二、状态机  上图是用状态机来描述山贼的">
+<meta name="twitter:image" content="http://yoursite.com/images/behavior/behavior-tree-fsm.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/02/15/game/behavior-tree/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>游戏AI-行为树 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/02/15/game/behavior-tree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">游戏AI-行为树
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-15 15:48:00" itemprop="dateCreated datePublished" datetime="2020-02-15T15:48:00+08:00">2020-02-15</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-02-17 21:30:17" itemprop="dateModified" datetime="2020-02-17T21:30:17+08:00">2020-02-17</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/game/" itemprop="url" rel="index"><span itemprop="name">game</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>游戏中，常见用AI实现方式有2种，状态机和行为树。下面主要简介绍行为树，跟状态机相比，行为树虽然优点很突出，但也不完美；在优化行为树的部分需要用到状态机，所以还是简单介绍一下状态机。</p>
+<h4 id="一、案例描述"><a href="#一、案例描述" class="headerlink" title="一、案例描述"></a>一、案例描述</h4><p>山贼的AI需求描述如下：</p>
+<ul>
+<li>视野内没有敌人则继续巡逻</li>
+<li>视野出现敌人则走过去攻击敌人</li>
+<li>当自己血量 &lt; 20% 则逃跑</li>
+</ul>
+<p>下面将用状态机和行为树来描述山贼的AI</p>
+<h4 id="二、状态机"><a href="#二、状态机" class="headerlink" title="二、状态机"></a>二、状态机</h4><img width="500" height="200" src="/images/behavior/behavior-tree-fsm.png">
+
+<p>上图是用状态机来描述山贼的AI, 目前来看状态机的逻辑还是非常清晰，代码实现也比较简单。但随着项目的推进，策划随时可能增加需求。假如现在需要加一个 “石化”状态，描述如下：<br>在逃跑的过程中，如果追击者数量&gt;2，则立即把自己石化，持续5s，此时自己不能被攻击也不能攻击目标。<br>在状态机中加入“石化”状态时，我们需要考虑它跟现有每个状态之间是否有联系，输入输出状态分别有哪些。在项目的开发中，随时有可能增加新的状态、减少状态或者改变状态之间的迁移关系，如果状态越来越多，任何一点小修改都会产生很大的工作量，而且特别容易出错，代码将变量难以维护，如果负责状态机的同事离职了，这会带来很大的问题。行为树的出现从根本上解决了些问题，它把每个行为作为一个原子项，提供给策划编辑，让策划来决定行为之间的关系，程序只需要集中精力根据需求增加新的行为，按照这种方式下去，程序的工作应该会越来越少，即使有一天交给其他同事维护也比较容易。</p>
+<h4 id="二、行为树"><a href="#二、行为树" class="headerlink" title="二、行为树"></a>二、行为树</h4><p>行为树是由控制节点、装饰节点、行为节点组成的一棵n叉树，中间节点一般为控制节点和装饰节，用于控制行为树的执行流程，它们相对固定，确定好了后，几乎不会变化；叶子节点由行为节点或条件节点组成，它实现了AI中的各种行为，行为树的框架完成后，策划提的新需要一般都是丰富行为节点。<br>需要注意的是，每个节点都有一个返回值，它们分别是：</p>
+<ul>
+<li>成功（Success）</li>
+<li>失败（failed）</li>
+<li>运行中（running）：表示当前帧没有执行完、下帧继续执行。<br>下面列出了常用的节点，主要用于说明行为树的原理，类型可能不全面，只要明白了原理，增加新类型就不在话下了。</li>
+</ul>
+<h5 id="1-1-控制节点"><a href="#1-1-控制节点" class="headerlink" title="1.1 控制节点"></a>1.1 控制节点</h5><p>控制节点一般为中间节点，用于控制行为树的执行流程，决定基子节点是以顺序、并行、随机或其它方式执行。</p>
+<ul>
+<li><p>顺序节点（Sequences）<br>依次执行所有子节点，若当前子节点返回成功，则继续执行；若子当前节点返回失败，则中断后续子节点的执行，并把结果返回给父节点。如下图所求：节点1返回成功，继续执行节点2；节点2返回失败，则把结果返回给Sequences的父节点，节点3并不会执行。<br>相当于<code>and</code>语义</p>
+<img width="500" height="200" src="/images/behavior/behavior-sequences.png">
+</li>
+<li><p>选择节点（Selector）<br>依次执行所有子节点，若当前子节点返回成功，则中断后续节点运行，并把结果返回给父节点。如下图所示：<br>相当于<code>or</code>语义</p>
+<img width="500" height="200" src="/images/behavior/behavior-selector.png">
+</li>
+<li><p>并行节点（Parallel）<br>依次执行所有子节点，无论失败与否，都会把所有子节点执行一遍。如下图所示：</p>
+<img width="500" height="200" src="/images/behavior/behavior-parellel.png">
+</li>
+<li><p>随机节点（Random）<br>随机选择一个子节点来运行，至于返回什么值这要看需求，比如：成功数&gt;失败数返回成功，否则返回失败。</p>
+</li>
+<li><p>记忆节点（MemSequences、MemSelector）<br>功能和顺序节点、选择节点类似，唯一不同就是会保存当前执行进度（比如：保存当前子节点索引），下一帧继续执行当前节点，如果当前节点是中间节点，则会跳过前面的节点。</p>
+</li>
+</ul>
+<h5 id="1-2-装饰节点（Decorator）"><a href="#1-2-装饰节点（Decorator）" class="headerlink" title="1.2 装饰节点（Decorator）"></a>1.2 装饰节点（Decorator）</h5><ul>
+<li><p>逆变节点（Inverter）<br>对子节点的返回值取反，相当于<code>not</code>语义，它只会有一个子节点。</p>
+</li>
+<li><p>成功节点（Succeeder）<br>不管其子节点返回何值，都会返回Success给父节点</p>
+</li>
+<li><p>重复节点（Repeater）<br>重复执行n次子节点。</p>
+</li>
+<li><p>重复直至失败节点（Repeat Until Fail）<br>重复执行子节点，直到失败为上；同样也有类似的”重复直至成功节点“ 这里就不列了。</p>
+</li>
+<li><p>执行一段时间（MaxTime）<br>重复执行子节点一段时间</p>
+</li>
+</ul>
+<p>节点的类型是灵活多变的，不同的项目有不同的需求。</p>
+<h6 id="1-3-行为节点（Action）"><a href="#1-3-行为节点（Action）" class="headerlink" title="1.3 行为节点（Action）"></a>1.3 行为节点（Action）</h6><p>行为节点都是叶节点，控制节点用于控制行为执行的流程，行为节点则表示具体功能，比如：战斗，逃跑，巡逻等。它至少包含两个函数：</p>
+<ul>
+<li>Init:用于初始化节点，比如读取配置数据初始化当前节点，只会执行一次。</li>
+<li>OnTick:每一帧都会执行，一般节点的主要逻辑都在此函数中调用。</li>
+</ul>
+<p>####### 1.1 行为节点例子</p>
+<p>这是一个在指定范围内查找道具的例子（Ation）:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//道具结构</span></span><br><span class="line"><span class="keyword">type</span> FindItem <span class="keyword">struct</span> &#123;</span><br><span class="line">	b3core.Action</span><br><span class="line">	index <span class="keyword">string</span></span><br><span class="line">	etype EntityType</span><br><span class="line">	dis   <span class="keyword">float32</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//初始化函数，参数setting节点的配置数据</span></span><br><span class="line"><span class="comment">//此函数在加载节点时调用</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(this *FindItem)</span> <span class="title">Initialize</span><span class="params">(setting *b3config.BTNodeCfg)</span></span> &#123;</span><br><span class="line">	this.Action.Initialize(setting)</span><br><span class="line">	this.index = setting.GetPropertyAsString(<span class="string">"index"</span>) <span class="comment">//道具枚举用于缓存道具的key</span></span><br><span class="line">	this.etype = EntityType(setting.GetPropertyAsInt(<span class="string">"etype"</span>))<span class="comment">//道具类型</span></span><br><span class="line">	this.dis = <span class="keyword">float32</span>(setting.GetProperty(<span class="string">"range"</span>))<span class="comment">//查找范围</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//遍历节点时，此函数会被调用，每个节点都有OnTick函数</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(this *FindItem)</span> <span class="title">OnTick</span><span class="params">(tick *b3core.Tick)</span> <span class="title">b3</span>.<span class="title">Status</span></span> &#123;</span><br><span class="line">	f := tick.GetTarget().(*Fighter) <span class="comment">//玩家对象</span></span><br><span class="line">	tick.Blackboard.Set(this.index, <span class="keyword">int32</span>(<span class="number">0</span>), <span class="string">""</span>, <span class="string">""</span>) <span class="comment">//清空老数据</span></span><br><span class="line">	ball := f.FindNearItem(this.dis, this.etype) <span class="comment">//在附近搜索道具</span></span><br><span class="line">	<span class="keyword">if</span> <span class="literal">nil</span> == ball &#123;<span class="comment">//如果没找到，向父节点返回FAILURE</span></span><br><span class="line">		<span class="keyword">return</span> b3.FAILURE</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	id := ball.GetID() <span class="comment">//获取道具id</span></span><br><span class="line">	tick.Blackboard.Set(this.index, id, <span class="string">""</span>, <span class="string">""</span>) <span class="comment">//缓存道具id</span></span><br><span class="line">	<span class="keyword">return</span> b3.SUCCESS<span class="comment">//向父节点返回SUCCESS</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">//因为行为树的节点返回值必须是FAILURE、SUCCESS、RUNNING, 所以Tick中产生的结果只能通过其它方式传回去，比如例子中的Blackboard</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>####### 1.2 用行为树表示山贼AI<br>下图在山贼的AI上加了如下需求：<br><code>在逃跑的过程中，如果追击者数量&gt;2，则立即把自己石化，持续5s，此时自己不能被攻击也不能攻击目标。</code><br>黄色部分为”石化“，对于程序来说，只需要写”石化”的逻辑即可，其它逻辑可以推给策划。条件判断其实可以放在行为节里，这里把它独立出来主要是为了方便表达。<br><img width="500" height="200" src="/images/behavior/behavior-behaviorAI.png"></p>
+<h4 id="二、状态机与行为树比较"><a href="#二、状态机与行为树比较" class="headerlink" title="二、状态机与行为树比较"></a>二、状态机与行为树比较</h4><h5 id="1-1-状态机"><a href="#1-1-状态机" class="headerlink" title="1.1 状态机"></a>1.1 状态机</h5><ul>
+<li><p>优点<br>实现简单、执行效率高。</p>
+</li>
+<li><p>缺点<br>随着状态数量的增多，状态之间的关系会越来越复杂，代码变得难以维护。</p>
+</li>
+</ul>
+<h5 id="1-2-行为树"><a href="#1-2-行为树" class="headerlink" title="1.2 行为树"></a>1.2 行为树</h5><ul>
+<li><p>优点<br>结构清晰、程序大部分工作是丰富行为节点，关系性弱。AI流程交给策划完成。</p>
+</li>
+<li><p>缺点<br>每次tick都会遍历整棵行为树(Mem子节点除外)，若树的深度很深，效率将变得低下。</p>
+</li>
+</ul>
+<h4 id="二、关于状态机行为树的思考"><a href="#二、关于状态机行为树的思考" class="headerlink" title="二、关于状态机行为树的思考"></a>二、关于状态机行为树的思考</h4><p>从状态机和行为树的特征可以看出，状态机和行为树都存在明显的缺点和优点。我们可不可以只取它们的优点？<br>在游戏中，没有目标进入主动怪的视野范围时，其实它的行为是很简单的，一般都在巡逻。如果用行为树，不管视野内有没有人，每帧都会遍历所有节点，浪费了大量资源。<br>如果用行为树实现巡逻、死亡、逃跑，状态机实现战斗部分这会是一个非常有效的优化，尤其是怪物很多时，大部分时间段，大部分怪都处于巡逻，或idle状态，这里再遍历行为树就显得很小费了。<br>如果项目的AI比较简单，比如小游戏之类的。用状态机是个不错的选择。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/21/game/aoe-skill-selector/" rel="next" title="AOE技能目标选择器">
+                <i class="fa fa-chevron-left"></i> AOE技能目标选择器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">10</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、案例描述"><span class="nav-text">一、案例描述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、状态机"><span class="nav-text">二、状态机</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、行为树"><span class="nav-text">二、行为树</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-控制节点"><span class="nav-text">1.1 控制节点</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-装饰节点（Decorator）"><span class="nav-text">1.2 装饰节点（Decorator）</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-行为节点（Action）"><span class="nav-text">1.3 行为节点（Action）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、状态机与行为树比较"><span class="nav-text">二、状态机与行为树比较</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-状态机"><span class="nav-text">1.1 状态机</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-行为树"><span class="nav-text">1.2 行为树</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、关于状态机行为树的思考"><span class="nav-text">二、关于状态机行为树的思考</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
