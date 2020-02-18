@@ -108,7 +108,7 @@
 <meta property="og:image" content="http://yoursite.com/images/behavior/behavior-selector.png">
 <meta property="og:image" content="http://yoursite.com/images/behavior/behavior-parellel.png">
 <meta property="og:image" content="http://yoursite.com/images/behavior/behavior-behaviorAI.png">
-<meta property="og:updated_time" content="2020-02-18T14:16:30.314Z">
+<meta property="og:updated_time" content="2020-02-18T15:09:49.482Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="游戏中的AI-行为树">
 <meta name="twitter:description" content="游戏中，常见用AI实现方式有2种，状态机和行为树。下面主要简介绍行为树，行为树是用一棵多叉树来表示AI，树的中间节点为控制节点控制着AI的执行流程，叶子节点为行为节点，描述了AI的具体行为。 一、案例描述山贼的AI需求描述如下：  视野内没有敌人则在一定范围内巡逻 视野出现敌人则走过去攻击敌人 当自己血量 &amp;lt; 20% 则逃跑  下面将分别用状态机和行为树来描述山贼的AI">
@@ -389,7 +389,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-02-18 22:16:30" itemprop="dateModified" datetime="2020-02-18T22:16:30+08:00">2020-02-18</time>
+                <time title="修改时间：2020-02-18 23:09:49" itemprop="dateModified" datetime="2020-02-18T23:09:49+08:00">2020-02-18</time>
               
             
           </span>
@@ -503,6 +503,7 @@
 <li>缺点：每次tick都会遍历整棵行为树(Mem子节点除外)，若树的深度很深，效率将变得低下。</li>
 </ul>
 <h4 id="四、关于状态机行为树的思考"><a href="#四、关于状态机行为树的思考" class="headerlink" title="四、关于状态机行为树的思考"></a>四、关于状态机行为树的思考</h4><p>从状态机和行为树的特征可以看出，状态机和行为树都存在明显的优缺点。我们可不可以只取它们的优点呢？<br>在游戏中，若主动怪的视野范围内没有目标它的行为是很简单的，一般会在一定范围内巡逻。如果用行为树，不管视野内有没有人，每帧都会遍历所有节点，这造成了很大的资源浪费。<br>如果用状态机实现巡逻、死亡、逃跑，进入战斗后的行为用行为树，这会是一个有效的优化。尤其是怪物很多时，大部分时间段，大部分怪都处于巡逻或idle状态，完全没有必要遍历行为树。<br>如果项目的AI比较简单，比如小游戏之类的。用状态机是个不错的选择。</p>
+<p>参考：<a href="https://github.com/magicsea/behavior3go" target="_blank" rel="noopener">https://github.com/magicsea/behavior3go</a></p>
 
       
     </div>
