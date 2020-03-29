@@ -320,6 +320,198 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/08/game/game-ranking/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2020/03/08/game/game-ranking/" class="post-title-link" itemprop="url">游戏中的排行榜</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-08 18:01:00" itemprop="dateCreated datePublished" datetime="2020-03-08T18:01:00+08:00">2020-03-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-03-29 16:44:05" itemprop="dateModified" datetime="2020-03-29T16:44:05+08:00">2020-03-29</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/game/" itemprop="url" rel="index"><span itemprop="name">game</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>
+              排行榜是游戏中重要的功能，如何才能实现一个高效的排行榜呢？我所在的项目组做的是SLG游戏，我们游戏的很多活动都有排行榜。上周接到一个跨服排行榜的功能案，需求是让现有的排行榜支持跨服。
+一、问题描述目前每个服的玩家大概4W人，如果战力排行榜做成跨服，开到300个服时，上榜人数会超过1kw。虽然很少有游戏能开到300个服，但作为服务器程序设计功能时必须要考虑极端情况，选择适合的方案，不然可能有推倒重来的风险。下面介绍2种实现排行榜的方案，一是快速排序，另一种是redis实现。
+二、快速排序实现实现方式如下：
+
+玩家分数变化时，更新到内存缓存，比如map。
+用快速排序定时对内存中的数据排序，生成成榜单。
+把排序生成的榜单推送到对应的区服。
+
+优化：假如配置榜单只显示前1k名的玩家，除首次排序外，我们可以只让分数&gt;最后一名的玩家参与排名，避免每次都全量排。排完名把1k名以外的玩家移除排序缓存，以保证参与排序的玩家不会越来越多。这样做可以解决排序基数大的问题，把每次需要排序的玩家从1kw减少到1k左右。
+但种方式还是很有局限，比如，不管玩家不上不榜，都要显示自己的名次。这是不是要对所有玩家
+              ...
+            </p>
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2020/03/08/game/game-ranking/" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/02/15/game/behavior-tree/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -748,7 +940,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-22 05:57:36" itemprop="dateModified" datetime="2020-01-22T05:57:36+08:00">2020-01-22</time>
+                <time title="修改时间：2020-03-26 21:02:01" itemprop="dateModified" datetime="2020-03-26T21:02:01+08:00">2020-03-26</time>
               
             
           </span>
@@ -1941,195 +2133,13 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/09/25/memory/golang-memory/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content>
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="lifan's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2019/09/25/memory/golang-memory/" class="post-title-link" itemprop="url">Golang内存分配及回收</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-09-25 22:27:06" itemprop="dateCreated datePublished" datetime="2019-09-25T22:27:06+08:00">2019-09-25</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2020-01-18 11:29:22" itemprop="dateModified" datetime="2020-01-18T11:29:22+08:00">2020-01-18</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。</p>
-<h4 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h4><p>服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分钟就会触发1次，是程序BUG？ 还是垃圾回收没触发？</p>
-<h4 id="内存采样"><a href="#内存采样" class="headerlink" title="内存采样"></a>内存采样</h4><ol>
-<li>top命令查看, RSS(RES)为11GB</li>
-<li>pprof对内存heap和allocs数据采样，发现inuse_space不到1GB</li>
-<li>输出进程运行时信息, HeapSys(从OS分配的堆内存), HeapAlloc(进程已用内存), HeapIdle(未使用的内存), 分别为11GB, 0.8GB, 10.2GB</li>
-</ol>
-<p>从内存采样结果来看，基本可以排除程序Bug和GC没触发这两种情况。</p>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2019/09/25/memory/golang-memory/" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+  </nav>
+
 
 
           </div>
@@ -2169,7 +2179,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">10</span>
+                    <span class="site-state-item-count">11</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>

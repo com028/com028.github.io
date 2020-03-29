@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="排行榜是游戏中重要的功能，如何才能实现一个高效的排行榜呢？我所在的项目组做的是SLG游戏，我们游戏的很多活动都有排行榜。上周接到一个跨服排行榜的功能案，需求是让现有的排行榜支持跨服。 一、问题描述目前每个服的玩家大概4W人，如果战力排行榜做成跨服，开到300个服时，上榜人数会超过1kw。虽然很少有游戏能开到300个服，但作为服务器程序设计功能时必须要考虑极端情况，选择适合的方案，不然可能有推倒重来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="游戏中的排行榜">
+<meta property="og:url" content="http://yoursite.com/2020/03/08/game/game-ranking/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="排行榜是游戏中重要的功能，如何才能实现一个高效的排行榜呢？我所在的项目组做的是SLG游戏，我们游戏的很多活动都有排行榜。上周接到一个跨服排行榜的功能案，需求是让现有的排行榜支持跨服。 一、问题描述目前每个服的玩家大概4W人，如果战力排行榜做成跨服，开到300个服时，上榜人数会超过1kw。虽然很少有游戏能开到300个服，但作为服务器程序设计功能时必须要考虑极端情况，选择适合的方案，不然可能有推倒重来">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/skiplist/skiplist-span.png">
+<meta property="og:image" content="http://yoursite.com/images/skiplist/skiplist-basic.png">
+<meta property="og:updated_time" content="2020-03-29T08:44:05.717Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="游戏中的排行榜">
+<meta name="twitter:description" content="排行榜是游戏中重要的功能，如何才能实现一个高效的排行榜呢？我所在的项目组做的是SLG游戏，我们游戏的很多活动都有排行榜。上周接到一个跨服排行榜的功能案，需求是让现有的排行榜支持跨服。 一、问题描述目前每个服的玩家大概4W人，如果战力排行榜做成跨服，开到300个服时，上榜人数会超过1kw。虽然很少有游戏能开到300个服，但作为服务器程序设计功能时必须要考虑极端情况，选择适合的方案，不然可能有推倒重来">
+<meta name="twitter:image" content="http://yoursite.com/images/skiplist/skiplist-span.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/03/08/game/game-ranking/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>游戏中的排行榜 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/08/game/game-ranking/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">游戏中的排行榜
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-08 18:01:00" itemprop="dateCreated datePublished" datetime="2020-03-08T18:01:00+08:00">2020-03-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-03-29 16:44:05" itemprop="dateModified" datetime="2020-03-29T16:44:05+08:00">2020-03-29</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/game/" itemprop="url" rel="index"><span itemprop="name">game</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>排行榜是游戏中重要的功能，如何才能实现一个高效的排行榜呢？我所在的项目组做的是SLG游戏，我们游戏的很多活动都有排行榜。上周接到一个跨服排行榜的功能案，需求是让现有的排行榜支持跨服。</p>
+<h4 id="一、问题描述"><a href="#一、问题描述" class="headerlink" title="一、问题描述"></a>一、问题描述</h4><p>目前每个服的玩家大概4W人，如果战力排行榜做成跨服，开到300个服时，上榜人数会超过1kw。虽然很少有游戏能开到300个服，但作为服务器程序设计功能时必须要考虑极端情况，选择适合的方案，不然可能有推倒重来的风险。下面介绍2种实现排行榜的方案，一是快速排序，另一种是redis实现。</p>
+<h4 id="二、快速排序实现"><a href="#二、快速排序实现" class="headerlink" title="二、快速排序实现"></a>二、快速排序实现</h4><p>实现方式如下：</p>
+<ol>
+<li>玩家分数变化时，更新到内存缓存，比如map。</li>
+<li>用快速排序定时对内存中的数据排序，生成成榜单。</li>
+<li>把排序生成的榜单推送到对应的区服。</li>
+</ol>
+<p>优化：<br>假如配置榜单只显示前1k名的玩家，除首次排序外，我们可以只让分数&gt;最后一名的玩家参与排名，避免每次都全量排。排完名把1k名以外的玩家移除排序缓存，以保证参与排序的玩家不会越来越多。这样做可以解决排序基数大的问题，把每次需要排序的玩家从1kw减少到1k左右。</p>
+<p>但种方式还是很有局限，比如，不管玩家不上不榜，都要显示自己的名次。这是不是要对所有玩家名排序呢？<br>游戏中排行榜比较主流的做法是用redis排序，那么redis内部是如何实现的呢？下面我们结合源码来一探究竟。</p>
+<h4 id="三、跳表实现"><a href="#三、跳表实现" class="headerlink" title="三、跳表实现"></a>三、跳表实现</h4><p>排行榜的另一种实现方式是使用redis中的有序集合SortedSet，其底层是通过跳跃表实现的。跳跃表拥有非常好的查找、插入、删除性能(logn)，而且可以很方便的获取名次区间内的节点，这恰好是排行榜需要的功能。</p>
+<h5 id="1-1-基本思想"><a href="#1-1-基本思想" class="headerlink" title="1.1 基本思想"></a>1.1 基本思想</h5><p>跳表非常像一个有序双向链表，它的插入，删除操作都跟双向链表操作类似，需要更新当前节点前驱和后继节点的指针。不同在于，链表的节点多了层高和跨度的概念。<br>层高：节点的层数，插入节点时随机生成。 查找节点时，从层高最高的节点开始查找，如果查找score &gt; 当前层下一个节点的score，则继续在当前层查找，否则进入下一层用同样的方法查找，直到查找成功或失败。<br>跨度：也叫跳数，第i层当前节点到第i层下一个节点的距离，这是跳表的核心。 当查找一个节点时，从当前节点到下一个节点可能直接跳过N个节点，查找路径上的跳数和就是节点在跳表中的名次(升序)。<br><img width="200" height="80" src="/images/skiplist/skiplist-span.png"></p>
+<h5 id="1-1-数据结构"><a href="#1-1-数据结构" class="headerlink" title="1.1 数据结构"></a>1.1 数据结构</h5><p>本文使用的源码版本为<a href="https://github.com/antirez/redis/tree/6.0" target="_blank" rel="noopener">redis 6.0</a><a href="https://github.com/antirez/redis/blob/6.0/src/server.h" target="_blank" rel="noopener">跳表结构</a>由2部分组成：</p>
+<ol>
+<li><p>跳表节点：跳表是由节点组成的双向链表</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">	<span class="comment">//其实就是命令ZADD key score member中的member，member值在跳表中是唯一的，当score相同时会根据member(ele)字典顺序升序排节点</span></span><br><span class="line">	<span class="comment">//sds可以看成对char*的封装，redis中的字符串都用sds表示。[参考]https://redisbook.readthedocs.io/en/latest/internal-datastruct/sds.html</span></span><br><span class="line">    sds ele; </span><br><span class="line">    <span class="comment">//分数用于节点排序(升序)，对应命令中的score</span></span><br><span class="line">    <span class="keyword">double</span> score; </span><br><span class="line"></span><br><span class="line">    <span class="comment">//指向上一个节点，ZREVRANGE相关命令会用到，因为跳表是按score升序的有序链表</span></span><br><span class="line">    <span class="comment">//但排行榜通常需要按score降序，假如取[1~3]名的玩家，我们首先需要把指针移到跳表尾部</span></span><br><span class="line">    <span class="comment">//通过backward取到前3名</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span> <span class="comment">//下一个节点</span></span><br><span class="line">        <span class="keyword">unsigned</span> <span class="keyword">long</span> span; <span class="comment">//跨度,当前节点到同层下一个节点的跨度</span></span><br><span class="line">    &#125; level[]; <span class="comment">//节点层级，每个节点可拥有1~32个层级</span></span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>跳表节点信息：记录了跳表节点的基本信息</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="comment">//header指向头节点， tail指向最后一个节点。需要注意的是，头节点是个特殊节点，不包含数据。尾节点是个包含数据的正常节点。</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> length; <span class="comment">//跳表节点数</span></span><br><span class="line">    <span class="keyword">int</span> level; <span class="comment">//最大层高</span></span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h5 id="1-2-查找"><a href="#1-2-查找" class="headerlink" title="1.2 查找"></a>1.2 查找</h5><p>下图是一个节点数为10，层高为4的跳表结构。</p>
+<img width="200" height="80" src="/images/skiplist/skiplist-basic.png">
+
+<p>绿色箭头为查找score为19的节点需要经历的路径，步骤如下：</p>
+<ol>
+<li>从header节点不为NULL的最高层开始查找，本例为level4。</li>
+<li>level4的forward指向的节点score为21， 21 &gt; 19, 则查找下一层（level3）</li>
+<li>level3指向的节点score为 9， 9 &lt; 19, 则当前指针指向score为9的节点</li>
+<li>score为9节点的forward节点值为21, 21 &gt; 19, 则查找下一层（level2）</li>
+<li>level2的forward节点值为17， 17 &lt; 19, 则当前指针指向score为17的节点</li>
+<li>score为17节点的forward节点值为21, 21 &gt; 19, 则查找下一层（level1）</li>
+<li>score为17节点(level1)的forward节点值为19, 查找成功</li>
+</ol>
+<p>源码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*通过分数和key查找跳表节点，找到则返回节点的排名，否则返回0</span></span><br><span class="line"><span class="comment"> *需要注意的是，节点的排名是从1开始的，因为0为header节点*/</span></span><br><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">zslGetRank</span><span class="params">(zskiplist *zsl, <span class="keyword">double</span> score, sds ele)</span> </span>&#123;</span><br><span class="line">    zskiplistNode *x;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> rank = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line"></span><br><span class="line">    x = zsl-&gt;header;</span><br><span class="line">    <span class="keyword">for</span> (i = zsl-&gt;level<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--) &#123;<span class="comment">//从跳表最高层开始查找</span></span><br><span class="line">        <span class="keyword">while</span> (x-&gt;level[i].forward &amp;&amp; <span class="comment">//如果当节点forward不为NULL，且forward.score &lt; score，则当前指针x指向同层的下一个节点</span></span><br><span class="line">            (x-&gt;level[i].forward-&gt;score &lt; score ||<span class="comment">//或者 score相等且forward的sds值 &lt; els (score相等时，按sds值升序排)</span></span><br><span class="line">                (x-&gt;level[i].forward-&gt;score == score &amp;&amp;</span><br><span class="line">                sdscmp(x-&gt;level[i].forward-&gt;ele,ele) &lt;= <span class="number">0</span>))) &#123;</span><br><span class="line">            rank += x-&gt;level[i].span; <span class="comment">//rank累加</span></span><br><span class="line">            x = x-&gt;level[i].forward; <span class="comment">//指向同层下一个节点</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*如果没找到的话 x 指向 zsl-&gt;header, header节点的ele值为NULL, 所以如果x-&gt;ele不为NULL 且 等于 els 说明找到，则返回它的rank*/</span></span><br><span class="line">        <span class="keyword">if</span> (x-&gt;ele &amp;&amp; sdscmp(x-&gt;ele,ele) == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> rank;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-3-插入"><a href="#1-3-插入" class="headerlink" title="1.3 插入"></a>1.3 插入</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ZSKIPLIST_MAXLEVEL 32 <span class="comment">/* 最大层数 */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ZSKIPLIST_P 0.25      <span class="comment">/* 概率为25% */</span></span></span><br><span class="line"><span class="comment">/*为即将插入的节点随机一个层数[1, 32],随到2层概率为1/4，随到3层的概率为1/4*1/4</span></span><br><span class="line"><span class="comment"> * 随机到32层的概率为1/2^63*/</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">zslRandomLevel</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> level = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> ((random()&amp;<span class="number">0xFFFF</span>) &lt; (ZSKIPLIST_P * <span class="number">0xFFFF</span>))</span><br><span class="line">        level += <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span> (level&lt;ZSKIPLIST_MAXLEVEL) ? level : ZSKIPLIST_MAXLEVEL;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/* 在zsl上插入一个节点*/</span></span><br><span class="line"><span class="function">zskiplistNode *<span class="title">zslInsert</span><span class="params">(zskiplist *zsl, <span class="keyword">double</span> score, sds ele)</span> </span>&#123;</span><br><span class="line">    zskiplistNode *update[ZSKIPLIST_MAXLEVEL], *x; <span class="comment">//update为待更新的节点层,因为插入节点后，这些节点层的forward指针和span都可能发生变化，记录是方便插入后修改</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> rank[ZSKIPLIST_MAXLEVEL]; <span class="comment">//待更新节点层的排名</span></span><br><span class="line">    <span class="keyword">int</span> i, level;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*这个for的逻辑跟zslGetRank里面的一样，从header最高层开始查找，直到找到新节点的插入位置，唯一的不同是这里记录了查找路径上插入节点后需要更新的节点层以及排名*/</span></span><br><span class="line">    serverAssert(!isnan(score));</span><br><span class="line">    x = zsl-&gt;header;</span><br><span class="line">    <span class="keyword">for</span> (i = zsl-&gt;level<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">        rank[i] = i == (zsl-&gt;level<span class="number">-1</span>) ? <span class="number">0</span> : rank[i+<span class="number">1</span>];</span><br><span class="line">        <span class="keyword">while</span> (x-&gt;level[i].forward &amp;&amp;</span><br><span class="line">                (x-&gt;level[i].forward-&gt;score &lt; score ||</span><br><span class="line">                    (x-&gt;level[i].forward-&gt;score == score &amp;&amp;</span><br><span class="line">                    sdscmp(x-&gt;level[i].forward-&gt;ele,ele) &lt; <span class="number">0</span>)))</span><br><span class="line">        &#123;</span><br><span class="line">            rank[i] += x-&gt;level[i].span;</span><br><span class="line">            x = x-&gt;level[i].forward;</span><br><span class="line">        &#125;</span><br><span class="line">        update[i] = x;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*为即将插入的节点随机一个层高，若随机到的层高&gt;当前跳表高大层高，则需要把header &gt; level的层指向新节点的层，这里先缓存到update，后面再作修改。</span></span><br><span class="line"><span class="comment">     *同时把header-&gt;level[i].span值设为zsl-&gt;length, 这样做是为了方便后面的公式计算新节点以及update中的span*/</span></span><br><span class="line">    level = zslRandomLevel();</span><br><span class="line">    <span class="keyword">if</span> (level &gt; zsl-&gt;level) &#123;</span><br><span class="line">        <span class="keyword">for</span> (i = zsl-&gt;level; i &lt; level; i++) &#123;</span><br><span class="line">            rank[i] = <span class="number">0</span>;</span><br><span class="line">            update[i] = zsl-&gt;header;</span><br><span class="line">            update[i]-&gt;level[i].span = zsl-&gt;length;</span><br><span class="line">        &#125;</span><br><span class="line">        zsl-&gt;level = level; <span class="comment">//把跳表的level设置为新高度(level)</span></span><br><span class="line">    &#125;</span><br><span class="line">    x = zslCreateNode(level,score,ele); <span class="comment">//new一个新节点</span></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; level; i++) &#123;<span class="comment">//从最低层到最高层更新新节点的各层，以及新节点插入后，影响到的update缓存中的节点层</span></span><br><span class="line">        x-&gt;level[i].forward = update[i]-&gt;level[i].forward; <span class="comment">//普通的链表插入</span></span><br><span class="line">        update[i]-&gt;level[i].forward = x;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*rank[0] - rank[i] 结果为 插入节点与插入位置第i层上一个节点之间的跨度，假设为delta</span></span><br><span class="line"><span class="comment">         *update[i]-&gt;level[i].span为i层待更新节点的跨度 - delta 就是插入节点的 span  */</span></span><br><span class="line">        x-&gt;level[i].span = update[i]-&gt;level[i].span - (rank[<span class="number">0</span>] - rank[i]);</span><br><span class="line">        update[i]-&gt;level[i].span = (rank[<span class="number">0</span>] - rank[i]) + <span class="number">1</span>; <span class="comment">//因为插入了一个节点，所以待更新节点的跨度为 delta + 1</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* 高于插入层级的span也要+1，因为在以前跨度的中间插入了一个了个节点 */</span></span><br><span class="line">    <span class="keyword">for</span> (i = level; i &lt; zsl-&gt;level; i++) &#123;</span><br><span class="line">        update[i]-&gt;level[i].span++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*计算插入节点的backward指针 以及插入节点下一个节点的backward指针*/</span></span><br><span class="line">    x-&gt;backward = (update[<span class="number">0</span>] == zsl-&gt;header) ? <span class="literal">NULL</span> : update[<span class="number">0</span>];</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;level[<span class="number">0</span>].forward)</span><br><span class="line">        x-&gt;level[<span class="number">0</span>].forward-&gt;backward = x;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        zsl-&gt;tail = x;</span><br><span class="line">    zsl-&gt;length++;<span class="comment">//跳表总节点数+1</span></span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-4-删除"><a href="#1-4-删除" class="headerlink" title="1.4 删除"></a>1.4 删除</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 从跳表中删除一个元素，删除成功返回1(找到且成功删除)，失败返回0</span></span><br><span class="line"><span class="comment"> * 如果参数node为NULL，从跳表中删除节点后，直接释放空间，否则只从跳表上删除，把这个节点通过*node返回给调用方，调用用方有可能复用这个节点。*/</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">zslDelete</span><span class="params">(zskiplist *zsl, <span class="keyword">double</span> score, sds ele, zskiplistNode **node)</span> </span>&#123;</span><br><span class="line">    zskiplistNode *update[ZSKIPLIST_MAXLEVEL], *x;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="comment">/*跟查找插入类似,删除一个节点后，需要记录删除节点后，要影响到的节点层(更新它们的sapn)*/</span></span><br><span class="line">    x = zsl-&gt;header;</span><br><span class="line">    <span class="keyword">for</span> (i = zsl-&gt;level<span class="number">-1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">        <span class="keyword">while</span> (x-&gt;level[i].forward &amp;&amp;</span><br><span class="line">                (x-&gt;level[i].forward-&gt;score &lt; score ||</span><br><span class="line">                    (x-&gt;level[i].forward-&gt;score == score &amp;&amp;</span><br><span class="line">                     sdscmp(x-&gt;level[i].forward-&gt;ele,ele) &lt; <span class="number">0</span>)))</span><br><span class="line">        &#123;</span><br><span class="line">            x = x-&gt;level[i].forward;</span><br><span class="line">        &#125;</span><br><span class="line">        update[i] = x;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    x = x-&gt;level[<span class="number">0</span>].forward;</span><br><span class="line">    <span class="keyword">if</span> (x &amp;&amp; score == x-&gt;score &amp;&amp; sdscmp(x-&gt;ele,ele) == <span class="number">0</span>) &#123;<span class="comment">/*如果找到节点*/</span></span><br><span class="line">        zslDeleteNode(zsl, x, update);<span class="comment">/*先从跳表中删除，并更新update节点层的span*/</span></span><br><span class="line">        <span class="keyword">if</span> (!node)<span class="comment">/*如果要复用则通过*node返回，不复用则直接释放*/</span></span><br><span class="line">            zslFreeNode(x);</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            *node = x;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>; <span class="comment">/* 没找到返回0 */</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*删除节点，参数x为待删除节点*/</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">zslDeleteNode</span><span class="params">(zskiplist *zsl, zskiplistNode *x, zskiplistNode **update)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; zsl-&gt;level; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (update[i]-&gt;level[i].forward == x) &#123;<span class="comment">/*如果update[i]是待删除节点前一个节点，则update[i]-&gt;level[i].span为删除节点sapn-1*/</span></span><br><span class="line">            update[i]-&gt;level[i].span += x-&gt;level[i].span - <span class="number">1</span>;</span><br><span class="line">            update[i]-&gt;level[i].forward = x-&gt;level[i].forward; <span class="comment">/*更新update[i]的forawrd指针*/</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            update[i]-&gt;level[i].span -= <span class="number">1</span>; <span class="comment">/*因为是从update[i]的跨度中删除一个节点，所以update[i]的span需要-1*/</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (x-&gt;level[<span class="number">0</span>].forward) &#123;<span class="comment">/*如果x不是最后一个节点，更新x下一个节点的backward为x的backward*/</span></span><br><span class="line">        x-&gt;level[<span class="number">0</span>].forward-&gt;backward = x-&gt;backward;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;<span class="comment">/*如果x是最后一个节点，把跳表的tail指针指向backward*/</span></span><br><span class="line">        zsl-&gt;tail = x-&gt;backward;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*如果删除的节点层级是跳表中最高的，则需要更新跳表的level*/</span></span><br><span class="line">    <span class="keyword">while</span>(zsl-&gt;level &gt; <span class="number">1</span> &amp;&amp; zsl-&gt;header-&gt;level[zsl-&gt;level<span class="number">-1</span>].forward == <span class="literal">NULL</span>)</span><br><span class="line">        zsl-&gt;level--;</span><br><span class="line">    <span class="comment">/*删除一个元素，节点数-1*/</span></span><br><span class="line">    zsl-&gt;length--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/02/15/game/behavior-tree/" rel="next" title="游戏中的AI-行为树">
+                <i class="fa fa-chevron-left"></i> 游戏中的AI-行为树
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、问题描述"><span class="nav-text">一、问题描述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、快速排序实现"><span class="nav-text">二、快速排序实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、跳表实现"><span class="nav-text">三、跳表实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-基本思想"><span class="nav-text">1.1 基本思想</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-数据结构"><span class="nav-text">1.1 数据结构</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-查找"><span class="nav-text">1.2 查找</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-插入"><span class="nav-text">1.3 插入</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-删除"><span class="nav-text">1.4 删除</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
