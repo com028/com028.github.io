@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="golang netpoller封装了不同平台的网络模型，由于我们的游戏服务器程几乎只运行在linux上，这里介绍epoll。epoll是linux下非阻塞的高效的网络模型，对大量文件描述符读写拥有优异的性能。下面先简单介绍epoll的原理，再从源码角度来看golang是如何封装epoll的。 一、epoll实现1.1 例子先通过一个简单的例子来看一下epoll是如何使用的，流程如下：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang Netpoll 实现原理">
+<meta property="og:url" content="http://yoursite.com/2020/07/03/golang/netpoll/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="golang netpoller封装了不同平台的网络模型，由于我们的游戏服务器程几乎只运行在linux上，这里介绍epoll。epoll是linux下非阻塞的高效的网络模型，对大量文件描述符读写拥有优异的性能。下面先简单介绍epoll的原理，再从源码角度来看golang是如何封装epoll的。 一、epoll实现1.1 例子先通过一个简单的例子来看一下epoll是如何使用的，流程如下：">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-07-05T15:12:42.748Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Golang Netpoll 实现原理">
+<meta name="twitter:description" content="golang netpoller封装了不同平台的网络模型，由于我们的游戏服务器程几乎只运行在linux上，这里介绍epoll。epoll是linux下非阻塞的高效的网络模型，对大量文件描述符读写拥有优异的性能。下面先简单介绍epoll的原理，再从源码角度来看golang是如何封装epoll的。 一、epoll实现1.1 例子先通过一个简单的例子来看一下epoll是如何使用的，流程如下：">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/07/03/golang/netpoll/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Golang Netpoll 实现原理 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/03/golang/netpoll/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Golang Netpoll 实现原理
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-07-03 22:54:06" itemprop="dateCreated datePublished" datetime="2020-07-03T22:54:06+08:00">2020-07-03</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-07-05 23:12:42" itemprop="dateModified" datetime="2020-07-05T23:12:42+08:00">2020-07-05</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>golang netpoller封装了不同平台的网络模型，由于我们的游戏服务器程几乎只运行在linux上，这里介绍epoll。epoll是linux下非阻塞的高效的网络模型，对大量文件描述符读写拥有优异的性能。下面先简单介绍epoll的原理，再从源码角度来看golang是如何封装epoll的。</p>
+<h4 id="一、epoll实现"><a href="#一、epoll实现" class="headerlink" title="一、epoll实现"></a>一、epoll实现</h4><h5 id="1-1-例子"><a href="#1-1-例子" class="headerlink" title="1.1 例子"></a>1.1 例子</h5><p>先通过一个简单的例子来看一下<code>epoll</code>是如何使用的，流程如下：<a id="more"></a></p>
+<ol>
+<li>创建套接字、绑定、监听</li>
+<li><code>epoll_create</code>接口创建<code>epol</code>l对象</li>
+<li><code>epoll_ctl</code>接口注册套接字的事件</li>
+<li><code>epoll_wait</code>接口轮询是否有事件发生，并通过<code>events</code>参数返回就绪(触发)的事件列表</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> s = socket(AF_INET, SOCK_STREAM, <span class="number">0</span>);   </span><br><span class="line">bind(s, , ,)</span><br><span class="line">listen(s, ,)</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> epfd = epoll_create(<span class="number">128</span>);<span class="comment">//创建eventpoll对象</span></span><br><span class="line"></span><br><span class="line">ev.events = _EPOLLIN | _EPOLLOUT | _EPOLLRDHUP | _EPOLLET</span><br><span class="line">epoll_ctl(epfd, EPOLL_CTL_ADD, s, &amp;ev);<span class="comment">//注册事件</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span>(<span class="literal">true</span>)&#123;<span class="comment">//轮询就绪事件</span></span><br><span class="line">    <span class="keyword">int</span> n = epoll_wait(epfd, &amp;events[<span class="number">0</span>], len(events), <span class="number">1000</span>)<span class="comment">//返回值n为就绪的事件数,events为事件列表</span></span><br><span class="line">    <span class="keyword">for</span>( i := <span class="number">0</span>; i &lt; n; i++ ) &#123;</span><br><span class="line">        ev := &amp;events[i]</span><br><span class="line">        <span class="comment">//处理事件</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-2-结构体"><a href="#1-2-结构体" class="headerlink" title="1.2 结构体"></a>1.2 结构体</h5><p>这里只例出了介绍<code>epoll</code>原理必要的字段</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> &#123;</span></span><br><span class="line">    <span class="keyword">wait_queue_head_t</span> wq; <span class="comment">//调用epoll_wait时，被阻塞的线程队列(链表)</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">rdllist</span>;</span> <span class="comment">//所有就绪的fd列表(链表)</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">rb_root_cached</span> <span class="title">rbr</span>;</span> <span class="comment">//所有通过epoll_ctl添加，需要监控的fd(红黑树)</span></span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-3-原理"><a href="#1-3-原理" class="headerlink" title="1.3 原理"></a>1.3 原理</h5><ol>
+<li>当调用<code>epoll_create</code>，其实是创建了一个<code>eventpoll</code>结构体对象，在<code>epoll</code>运行期间的相关数据都存在此结构里面。</li>
+<li>接着是通过<code>epoll_ctl</code>注册<code>socket s</code> 感兴趣的事件，结构中的<code>rbr</code>就是用来存放所有注册的<code>socket</code>。同时<code>epoll_ctl</code>接口还会注册回调函数<code>ep_poll_callback</code>。</li>
+<li>网卡收到数据后，会把数据复制到内核空间，并触发回调函数<code>ep_poll_callback</code>，<code>ep_poll_callback</code>会把就绪的<code>fd</code>指针放入<code>rdllist</code>，并检查<code>wq</code>中是否有阻塞的线程，如果有则唤醒它们。</li>
+<li>调用<code>epoll_wait</code>函数检查是否有事件触发(就绪)，如果有，则通过参数2返回（这里其实就是检查<code>rdllist</code>是否为空，如果不为空则返回事件列表）。参数4为阻塞时间，若不为0，在<code>rdllist</code>为空时，调用<code>epoll_wait</code>的线程会被阻塞，并放到<code>wq</code>中，如果阻塞时间结束，仍然没有事件发生，则被唤醒；如果等待期间有事件发生内核触发<code>ep_poll_callback</code>回调并唤醒这个<code>fd</code>上阻塞的线程。</li>
+</ol>
+<h5 id="1-4-事件"><a href="#1-4-事件" class="headerlink" title="1.4 事件"></a>1.4 事件</h5><p>EPOLLIN ：fd可读<br>EPOLLOUT：fd可写<br>EPOLLPRI：fd有紧急事件数据到达<br>EPOLLERR：fd发生错误<br>EPOLLHUP：fd被挂断<br>EPOLLET： 设置epoll为边沿触发，默认为水平触发<br>EPOLLONESHOT：只监听一次事件</p>
+<h4 id="二、Golang-Netpoll-实现"><a href="#二、Golang-Netpoll-实现" class="headerlink" title="二、Golang Netpoll 实现"></a>二、Golang Netpoll 实现</h4><p>使用<code>golang</code>可以快速开发一个网络应用，通常不需要借助第三方网络库就能满足需求。那么它是如何做到简单高效的呢？理解了<code>epoll</code>的原理后，下面介绍<code>golang netpoll</code>是如何实现的。</p>
+<h5 id="1-1-例子-1"><a href="#1-1-例子-1" class="headerlink" title="1.1 例子"></a>1.1 例子</h5><p>还是先通过一个简单的例子回顾一下<code>golang</code>网络模块基本用法</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    listen, err := net.Listen(<span class="string">"tcp"</span>, <span class="string">":8080"</span>)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">"listen error: "</span>, err)</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        conn, err := listen.Accept()</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            fmt.Println(<span class="string">"accept error: "</span>, err)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">go</span> HandleConn(conn)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">HandleConn</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    <span class="keyword">defer</span> conn.Close()</span><br><span class="line">    buf := <span class="built_in">make</span>([]<span class="keyword">byte</span>, <span class="number">1024</span>)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        _, _ = conn.Read(buf)</span><br><span class="line">        _, _ = conn.Write(buf)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-2-结构体-1"><a href="#1-2-结构体-1" class="headerlink" title="1.2 结构体"></a>1.2 结构体</h5><p><code>TCP</code>网络<code>listener</code>, 当我们调用<code>net.Listen</code>时，会返回一个<code>TCPListener</code>对象</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TCPListener <span class="keyword">struct</span> &#123;</span><br><span class="line">    fd *netFD</span><br><span class="line">    lc ListenConfig</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>网络文件描述符，其实是对<code>FD</code>的封装</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> netFD <span class="keyword">struct</span> &#123;</span><br><span class="line">    pfd poll.FD      <span class="comment">// 文件描述符</span></span><br><span class="line">    family      <span class="keyword">int</span>  <span class="comment">// 地址族标识</span></span><br><span class="line">    sotype      <span class="keyword">int</span></span><br><span class="line">    isConnected <span class="keyword">bool</span> <span class="comment">// 是已经建立连接</span></span><br><span class="line">    net         <span class="keyword">string</span></span><br><span class="line">    laddr       Addr</span><br><span class="line">    raddr       Addr</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>FD</code>是文件描述符。<code>net</code>和<code>os</code>包使用此类型表示一个网络连接或<code>os</code>文件</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> FD <span class="keyword">struct</span> &#123;</span><br><span class="line">    <span class="comment">// Lock sysfd and serialize access to Read and Write methods.</span></span><br><span class="line">    fdmu fdMutex</span><br><span class="line"></span><br><span class="line">    <span class="comment">// socket的系统文件描述符，直到fd被关闭都不会变化</span></span><br><span class="line">    Sysfd <span class="keyword">int</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// I/O poller.</span></span><br><span class="line">    pd pollDesc</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Whether this is a streaming descriptor, as opposed to a</span></span><br><span class="line">    <span class="comment">// packet-based descriptor like a UDP socket. Immutable.</span></span><br><span class="line">    IsStream <span class="keyword">bool</span> <span class="comment">//TCP时为true</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// true表示普通文件描述符(fd)，false表示网络连接描述符(nfd)</span></span><br><span class="line">    isFile <span class="keyword">bool</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> pollDesc <span class="keyword">struct</span> &#123;</span><br><span class="line">    runtimeCtx <span class="keyword">uintptr</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对连接的读写都是通过此结构的方法实现的</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> pollDesc <span class="keyword">struct</span> &#123;</span><br><span class="line">    link *pollDesc <span class="comment">// in pollcache, protected by pollcache.lock</span></span><br><span class="line">    lock    mutex <span class="comment">// protects the following fields</span></span><br><span class="line">    fd      <span class="keyword">uintptr</span></span><br><span class="line">    closing <span class="keyword">bool</span></span><br><span class="line">    everr   <span class="keyword">bool</span>    <span class="comment">// marks event scanning error happened</span></span><br><span class="line">    user    <span class="keyword">uint32</span>  <span class="comment">// user settable cookie</span></span><br><span class="line">    rseq    <span class="keyword">uintptr</span> <span class="comment">// protects from stale read timers</span></span><br><span class="line">    rg      <span class="keyword">uintptr</span> <span class="comment">// 指向读数据被gopark的g</span></span><br><span class="line">    rt      timer   <span class="comment">// 读超时timer</span></span><br><span class="line">    rd      <span class="keyword">int64</span>   <span class="comment">// 读超时时间</span></span><br><span class="line">    wseq    <span class="keyword">uintptr</span> <span class="comment">// protects from stale write timers</span></span><br><span class="line">    wg      <span class="keyword">uintptr</span> <span class="comment">// 指向写数据被gopark的g</span></span><br><span class="line">    wt      timer   <span class="comment">// 写超时timer</span></span><br><span class="line">    wd      <span class="keyword">int64</span>   <span class="comment">// 写超时时间</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-3-源码"><a href="#1-3-源码" class="headerlink" title="1.3 源码"></a>1.3 源码</h5><p>上面的例子主要涉及了接口<code>Listen</code>、<code>Accept</code>、<code>Read</code>、<code>Write</code>、<code>Close</code>，我们通过源码来看下这几个接口是怎么实现的，以及在上层无感知的情况下如何跟<code>epoll</code>完美绑定到一起的。</p>
+<h6 id="1-1-Listen"><a href="#1-1-Listen" class="headerlink" title="1.1 Listen"></a>1.1 <code>Listen</code></h6><p>当我们在应用层调用<code>net.Listen</code>时，<code>Listen</code>接口会依次调用:</p>
+<ol>
+<li><code>sysListener.listenTCP</code>：创建<code>TCPListener</code>对象</li>
+<li><code>socket</code>：返回一个使用<code>network poller</code>异步<code>I/O</code>的网络文件描述符(在<code>socket</code>函数中会创建<code>netFD</code>对象)。</li>
+<li><code>netFD.listenStream</code>:设置套接字参数，绑定，监听。</li>
+<li><code>ollDesc.init</code>:<code>init</code>函数中会调用<code>runtime_pollServerInit</code>、<code>runtime_pollOpen</code>。</li>
+<li><code>runtime_pollServerInit</code>：调用<code>epoll_create</code>创建<code>epoll</code>。</li>
+<li><code>runtime_pollOpen</code>：调用<code>epoll_ctl</code>添加监听事件。<br>就这样<code>Listen</code>接口成功和<code>epoll</code>的<code>epoll_create</code>、<code>epoll_ctl</code>接口关联起来了，下面是详细过程。</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Listen</span><span class="params">(network, address <span class="keyword">string</span>)</span> <span class="params">(Listener, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> lc ListenConfig</span><br><span class="line">    <span class="keyword">return</span> lc.Listen(context.Background(), network, address)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(lc *ListenConfig)</span> <span class="title">Listen</span><span class="params">(ctx context.Context, network, address <span class="keyword">string</span>)</span> <span class="params">(Listener, error)</span></span> &#123;</span><br><span class="line">    addrs, err := DefaultResolver.resolveAddrList(ctx, <span class="string">"listen"</span>, network, address, <span class="literal">nil</span>)<span class="comment">//解析地址</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, &amp;OpError&#123;Op: <span class="string">"listen"</span>, Net: network, Source: <span class="literal">nil</span>, Addr: <span class="literal">nil</span>, Err: err&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    sl := &amp;sysListener&#123;</span><br><span class="line">        ListenConfig: *lc,</span><br><span class="line">        network:      network,</span><br><span class="line">        address:      address,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> l Listener</span><br><span class="line">    la := addrs.first(isIPv4)</span><br><span class="line">    <span class="keyword">switch</span> la := la.(<span class="keyword">type</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> *TCPAddr: </span><br><span class="line">        l, err = sl.listenTCP(ctx, la)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(sl *sysListener)</span> <span class="title">listenTCP</span><span class="params">(ctx context.Context, laddr *TCPAddr)</span> <span class="params">(*TCPListener, error)</span></span> &#123;</span><br><span class="line">    fd, err := internetSocket(ctx, sl.network, laddr, <span class="literal">nil</span>, syscall.SOCK_STREAM, <span class="number">0</span>, <span class="string">"listen"</span>, sl.ListenConfig.Control)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &amp;TCPListener&#123;fd: fd, lc: sl.ListenConfig&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">internetSocket</span><span class="params">(ctx context.Context, net <span class="keyword">string</span>, laddr, raddr sockaddr, sotype, proto <span class="keyword">int</span>, mode <span class="keyword">string</span>, ctrlFn <span class="keyword">func</span>(<span class="keyword">string</span>, <span class="keyword">string</span>, syscall.RawConn)</span> <span class="title">error</span>) <span class="params">(fd *netFD, err error)</span></span> &#123;</span><br><span class="line">    family, ipv6only := favoriteAddrFamily(net, laddr, raddr, mode)<span class="comment">//根据网络类型(TCP或其它)返回适当的地址族</span></span><br><span class="line">    <span class="keyword">return</span> socket(ctx, net, family, sotype, proto, ipv6only, laddr, raddr, ctrlFn)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//返回一个使用 network poller异步I/O的网络文件描述符</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">socket</span><span class="params">(ctx context.Context, net <span class="keyword">string</span>, family, sotype, proto <span class="keyword">int</span>, ipv6only <span class="keyword">bool</span>, laddr, raddr sockaddr, ctrlFn <span class="keyword">func</span>(<span class="keyword">string</span>, <span class="keyword">string</span>, syscall.RawConn)</span> <span class="title">error</span>) <span class="params">(fd *netFD, err error)</span></span> &#123;</span><br><span class="line">    s, err := sysSocket(family, sotype, proto)<span class="comment">//创建一个socket，底层调用socket接口</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//设置socket参数setsockopt</span></span><br><span class="line">    <span class="keyword">if</span> err = setDefaultSockopts(s, family, sotype, ipv6only); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        poll.CloseFunc(s)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//创建netFD并初始化</span></span><br><span class="line">    <span class="keyword">if</span> fd, err = newFD(s, family, sotype, net); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        poll.CloseFunc(s)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> laddr != <span class="literal">nil</span> &amp;&amp; raddr == <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">switch</span> sotype &#123;</span><br><span class="line">        <span class="keyword">case</span> syscall.SOCK_STREAM, syscall.SOCK_SEQPACKET:<span class="comment">//SOCK_STREAM表示TCP,基于连接的字节洗</span></span><br><span class="line">            <span class="keyword">if</span> err := fd.listenStream(laddr, listenerBacklog(), ctrlFn); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                fd.Close()</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> fd, <span class="literal">nil</span></span><br><span class="line">        <span class="keyword">case</span> syscall.SOCK_DGRAM:<span class="comment">//SOCK_DGRAM表示UDP，无连接的数据报</span></span><br><span class="line">            <span class="keyword">if</span> err := fd.listenDatagram(laddr, ctrlFn); err != <span class="literal">nil</span> &#123;</span><br><span class="line">                fd.Close()</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> fd, <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> fd, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建netFD对象并初始化</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newFD</span><span class="params">(sysfd, family, sotype <span class="keyword">int</span>, net <span class="keyword">string</span>)</span> <span class="params">(*netFD, error)</span></span> &#123;</span><br><span class="line">    ret := &amp;netFD&#123;</span><br><span class="line">        pfd: poll.FD&#123;</span><br><span class="line">            Sysfd:         sysfd,</span><br><span class="line">            IsStream:      sotype == syscall.SOCK_STREAM,</span><br><span class="line">            ZeroReadIsEOF: sotype != syscall.SOCK_DGRAM &amp;&amp; sotype != syscall.SOCK_RAW,</span><br><span class="line">        &#125;,</span><br><span class="line">        family: family,</span><br><span class="line">        sotype: sotype,</span><br><span class="line">        net:    net,</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *netFD)</span> <span class="title">listenStream</span><span class="params">(laddr sockaddr, backlog <span class="keyword">int</span>, ctrlFn <span class="keyword">func</span>(<span class="keyword">string</span>, <span class="keyword">string</span>, syscall.RawConn)</span> <span class="title">error</span>) <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> err error</span><br><span class="line">    <span class="comment">//设置setsockopt为syscall.SOL_SOCKET, syscall.SO_REUSEADDR</span></span><br><span class="line">    <span class="keyword">if</span> err = setDefaultListenerSockopts(fd.pfd.Sysfd); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> lsa syscall.Sockaddr</span><br><span class="line">    <span class="keyword">if</span> lsa, err = laddr.sockaddr(fd.family); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ctrlFn != <span class="literal">nil</span> &#123;</span><br><span class="line">        c, err := newRawConn(fd)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> err := ctrlFn(fd.ctrlNetwork(), laddr.String(), c); err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> err</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> err = syscall.Bind(fd.pfd.Sysfd, lsa); err != <span class="literal">nil</span> &#123;<span class="comment">//绑定</span></span><br><span class="line">        <span class="keyword">return</span> os.NewSyscallError(<span class="string">"bind"</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> err = listenFunc(fd.pfd.Sysfd, backlog); err != <span class="literal">nil</span> &#123;<span class="comment">//监听</span></span><br><span class="line">        <span class="keyword">return</span> os.NewSyscallError(<span class="string">"listen"</span>, err)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> err = fd.init(); err != <span class="literal">nil</span> &#123;<span class="comment">//初始化FD，并创建epoll，注册epoll事件</span></span><br><span class="line">        <span class="keyword">return</span> err</span><br><span class="line">    &#125;</span><br><span class="line">    lsa, _ = syscall.Getsockname(fd.pfd.Sysfd)</span><br><span class="line">    fd.setAddr(fd.addrFunc()(lsa), <span class="literal">nil</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *netFD)</span> <span class="title">init</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> fd.pfd.Init(fd.net, <span class="literal">true</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//初始化FD,Sysfd必须在调用此函数之Sysfd被设置（socket的fd）</span></span><br><span class="line"><span class="comment">//这个在同一个fd上可能会被调用多次</span></span><br><span class="line"><span class="comment">//net参数是网络名（例如:tcp）或者 "file"</span></span><br><span class="line"><span class="comment">//pollable为true表示fd由runtime netpoll管理</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *FD)</span> <span class="title">Init</span><span class="params">(net <span class="keyword">string</span>, pollable <span class="keyword">bool</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="comment">//这里不关心网络类型，但需要标识出是文件fd还是网络fd</span></span><br><span class="line">    <span class="keyword">if</span> net == <span class="string">"file"</span> &#123;</span><br><span class="line">        fd.isFile = <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !pollable &#123;<span class="comment">//如果不交给netpoll管理，就使用阻塞模式</span></span><br><span class="line">        fd.isBlocking = <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    err := fd.pd.init(fd) <span class="comment">//初始化runtime poller</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="comment">//如果初始化runtime poller失败，则使用阻塞模式</span></span><br><span class="line">        fd.isBlocking = <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> serverInit sync.Once</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(pd *pollDesc)</span> <span class="title">init</span><span class="params">(fd *FD)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    <span class="comment">//一个进程只会调用一次runtime_pollServerInit，意味着一个进程只会有一个epoll对象</span></span><br><span class="line">    serverInit.Do(runtime_pollServerInit)</span><br><span class="line">    <span class="comment">//注册epoll事件</span></span><br><span class="line">    ctx, errno := runtime_pollOpen(<span class="keyword">uintptr</span>(fd.Sysfd))</span><br><span class="line">    <span class="keyword">if</span> errno != <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> ctx != <span class="number">0</span> &#123;</span><br><span class="line">            runtime_pollUnblock(ctx)</span><br><span class="line">            runtime_pollClose(ctx)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> errnoErr(syscall.Errno(errno))</span><br><span class="line">    &#125;</span><br><span class="line">    pd.runtimeCtx = ctx</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//在linux平台上，调用runtime_pollServerInit 会被映射到poll_runtime_pollServerInit</span></span><br><span class="line"><span class="comment">//runtime_pollOpen也同理</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">poll_runtime_pollServerInit</span><span class="params">()</span></span> &#123;</span><br><span class="line">    netpollGenericInit()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollGenericInit</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> atomic.Load(&amp;netpollInited) == <span class="number">0</span> &#123;</span><br><span class="line">        lock(&amp;netpollInitLock)</span><br><span class="line">        <span class="keyword">if</span> netpollInited == <span class="number">0</span> &#123;</span><br><span class="line">            netpollinit()</span><br><span class="line">            atomic.Store(&amp;netpollInited, <span class="number">1</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        unlock(&amp;netpollInitLock)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollinit</span><span class="params">()</span></span> &#123;</span><br><span class="line">    epfd = epollcreate1(_EPOLL_CLOEXEC) <span class="comment">//创建epoll</span></span><br><span class="line">    <span class="keyword">if</span> epfd &lt; <span class="number">0</span> &#123;</span><br><span class="line">        epfd = epollcreate(<span class="number">1024</span>)</span><br><span class="line">        <span class="keyword">if</span> epfd &lt; <span class="number">0</span> &#123;</span><br><span class="line">            <span class="built_in">println</span>(<span class="string">"runtime: epollcreate failed with"</span>, -epfd)</span><br><span class="line">            throw(<span class="string">"runtime: netpollinit failed"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        closeonexec(epfd)</span><br><span class="line">    &#125;</span><br><span class="line">    r, w, errno := nonblockingPipe()</span><br><span class="line">    <span class="keyword">if</span> errno != <span class="number">0</span> &#123;</span><br><span class="line">        <span class="built_in">println</span>(<span class="string">"runtime: pipe failed with"</span>, -errno)</span><br><span class="line">        throw(<span class="string">"runtime: pipe failed"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    ev := epollevent&#123;</span><br><span class="line">        events: _EPOLLIN,</span><br><span class="line">    &#125;</span><br><span class="line">    *(**<span class="keyword">uintptr</span>)(unsafe.Pointer(&amp;ev.data)) = &amp;netpollBreakRd</span><br><span class="line">    errno = epollctl(epfd, _EPOLL_CTL_ADD, r, &amp;ev)</span><br><span class="line">    <span class="keyword">if</span> errno != <span class="number">0</span> &#123;</span><br><span class="line">        <span class="built_in">println</span>(<span class="string">"runtime: epollctl failed with"</span>, -errno)</span><br><span class="line">        throw(<span class="string">"runtime: epollctl failed"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    netpollBreakRd = <span class="keyword">uintptr</span>(r)</span><br><span class="line">    netpollBreakWr = <span class="keyword">uintptr</span>(w)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">poll_runtime_pollOpen</span><span class="params">(fd <span class="keyword">uintptr</span>)</span> <span class="params">(*pollDesc, <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">    pd := pollcache.alloc()<span class="comment">//创建pollDesc对象</span></span><br><span class="line">    lock(&amp;pd.lock)</span><br><span class="line">    <span class="keyword">if</span> pd.wg != <span class="number">0</span> &amp;&amp; pd.wg != pdReady &#123;</span><br><span class="line">        throw(<span class="string">"runtime: blocked write on free polldesc"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> pd.rg != <span class="number">0</span> &amp;&amp; pd.rg != pdReady &#123;</span><br><span class="line">        throw(<span class="string">"runtime: blocked read on free polldesc"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    pd.fd = fd</span><br><span class="line">    pd.closing = <span class="literal">false</span></span><br><span class="line">    pd.everr = <span class="literal">false</span></span><br><span class="line">    pd.rseq++</span><br><span class="line">    pd.rg = <span class="number">0</span></span><br><span class="line">    pd.rd = <span class="number">0</span></span><br><span class="line">    pd.wseq++</span><br><span class="line">    pd.wg = <span class="number">0</span></span><br><span class="line">    pd.wd = <span class="number">0</span></span><br><span class="line">    unlock(&amp;pd.lock)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> errno <span class="keyword">int32</span></span><br><span class="line">    errno = netpollopen(fd, pd)</span><br><span class="line">    <span class="keyword">return</span> pd, <span class="keyword">int</span>(errno)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//注册事件，可读，可写，挂断，边沿触发</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollopen</span><span class="params">(fd <span class="keyword">uintptr</span>, pd *pollDesc)</span> <span class="title">int32</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> ev epollevent</span><br><span class="line">    ev.events = _EPOLLIN | _EPOLLOUT | _EPOLLRDHUP | _EPOLLET</span><br><span class="line">    *(**pollDesc)(unsafe.Pointer(&amp;ev.data)) = pd</span><br><span class="line">    <span class="keyword">return</span> -epollctl(epfd, _EPOLL_CTL_ADD, <span class="keyword">int32</span>(fd), &amp;ev)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-2-Accept"><a href="#1-2-Accept" class="headerlink" title="1.2 Accept"></a>1.2 Accept</h6><p><code>Accept</code>的调用流程相对简单，当例子中调用<code>listen.Accept</code>时，会依次调用<code>TCPListener.accept()</code>, <code>netFD.accept()</code>, <code>FD.accept()</code>。<code>FD.accept()</code>会重置<code>pollDesc</code>中的<code>rg</code>,并调用原始套接字的<code>accept</code>接口，直到有连接到来或发生错误返回，如果返回<code>EGAIN</code>,则当前<code>g</code>被<code>gorpark</code>。若成功等到连接则创建<code>netFD</code>对象，再调用<code>netFD.init()</code>进入跟<code>Listen</code>中<code>netFD.init()</code>一样的流程。这里需要注意的是同一进程<code>epoll</code>只会被创建一次（<code>runtime_pollServerInit</code>用的<code>sync.One</code>不管调用多少次，只有第一次会被执行）</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ln *TCPListener)</span> <span class="title">accept</span><span class="params">()</span> <span class="params">(*TCPConn, error)</span></span> &#123;</span><br><span class="line">    fd, err := ln.fd.accept()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    tc := newTCPConn(fd) <span class="comment">//</span></span><br><span class="line">    <span class="keyword">if</span> ln.lc.KeepAlive &gt;= <span class="number">0</span> &#123;</span><br><span class="line">        setKeepAlive(fd, <span class="literal">true</span>)</span><br><span class="line">        ka := ln.lc.KeepAlive</span><br><span class="line">        <span class="keyword">if</span> ln.lc.KeepAlive == <span class="number">0</span> &#123;</span><br><span class="line">            ka = defaultTCPKeepAlive</span><br><span class="line">        &#125;</span><br><span class="line">        setKeepAlivePeriod(fd, ka)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> tc, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建TCPConn对象，并设置setsockopt参数</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newTCPConn</span><span class="params">(fd *netFD)</span> *<span class="title">TCPConn</span></span> &#123;</span><br><span class="line">    c := &amp;TCPConn&#123;conn&#123;fd&#125;&#125;</span><br><span class="line">    setNoDelay(c.fd, <span class="literal">true</span>)</span><br><span class="line">    <span class="keyword">return</span> c</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//设置setsockopt的参数TCP_NODELAY， 禁用Nagle算法</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">setNoDelay</span><span class="params">(fd *netFD, noDelay <span class="keyword">bool</span>)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">    err := fd.pfd.SetsockoptInt(syscall.IPPROTO_TCP, syscall.TCP_NODELAY, boolint(noDelay))</span><br><span class="line">    runtime.KeepAlive(fd)</span><br><span class="line">    <span class="keyword">return</span> wrapSyscallError(<span class="string">"setsockopt"</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *netFD)</span> <span class="title">accept</span><span class="params">()</span> <span class="params">(netfd *netFD, err error)</span></span> &#123;</span><br><span class="line">    d, rsa, errcall, err := fd.pfd.Accept()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> errcall != <span class="string">""</span> &#123;</span><br><span class="line">            err = wrapSyscallError(errcall, err)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//创建netFD对象</span></span><br><span class="line">    <span class="keyword">if</span> netfd, err = newFD(d, fd.family, fd.sotype, fd.net); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        poll.CloseFunc(d)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//走Listen一样的流程，最终在epoll中注册当前套接字(fd)的事件</span></span><br><span class="line">    <span class="keyword">if</span> err = netfd.init(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        netfd.Close()</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    lsa, _ := syscall.Getsockname(netfd.pfd.Sysfd)</span><br><span class="line">    netfd.setAddr(netfd.addrFunc()(lsa), netfd.addrFunc()(rsa))</span><br><span class="line">    <span class="keyword">return</span> netfd, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *FD)</span> <span class="title">Accept</span><span class="params">()</span> <span class="params">(<span class="keyword">int</span>, syscall.Sockaddr, <span class="keyword">string</span>, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> err := fd.readLock(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>, <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">defer</span> fd.readUnlock()</span><br><span class="line"></span><br><span class="line">    <span class="comment">//重置pollDesc中的rg为0</span></span><br><span class="line">    <span class="keyword">if</span> err := fd.pd.prepareRead(fd.isFile); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>, <span class="literal">nil</span>, <span class="string">""</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="comment">//轮训是否有connect来到，并返回非阻塞的fd</span></span><br><span class="line">        s, rsa, errcall, err := accept(fd.Sysfd)</span><br><span class="line">        <span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> s, rsa, <span class="string">""</span>, err</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">switch</span> err &#123;</span><br><span class="line">        <span class="keyword">case</span> syscall.EAGAIN:<span class="comment">//如果暂没有connect，则gopark当前g</span></span><br><span class="line">            <span class="keyword">if</span> fd.pd.pollable() &#123;</span><br><span class="line">                <span class="keyword">if</span> err = fd.pd.waitRead(fd.isFile); err == <span class="literal">nil</span> &#123;</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        <span class="keyword">case</span> syscall.ECONNABORTED:</span><br><span class="line">            <span class="comment">// This means that a socket on the listen</span></span><br><span class="line">            <span class="comment">// queue was closed before we Accept()ed it;</span></span><br><span class="line">            <span class="comment">// it's a silly error, so try again.</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>, <span class="literal">nil</span>, errcall, err</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-3-Read-Write"><a href="#1-3-Read-Write" class="headerlink" title="1.3 Read/Write"></a>1.3 Read/Write</h6><p><code>Read</code>和<code>Write</code>的流程非常相似，这里只介绍<code>Read</code>。在调用例子中<code>conn.Read(buf)</code>时，调用流程为<code>conn.Read-&gt;netFD.Read-&gt;FD.Read</code>。<code>FD.Read</code>首先重置<code>pollDesc</code>中的<code>rg</code>为0，检查是否有可读数据，有则读取返回；若返回<code>EAGAIN</code>则<code>gopark</code>当前<code>g</code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Read implements the Conn Read method.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *conn)</span> <span class="title">Read</span><span class="params">(b []<span class="keyword">byte</span>)</span> <span class="params">(<span class="keyword">int</span>, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> !c.ok() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>, syscall.EINVAL</span><br><span class="line">    &#125;</span><br><span class="line">    n, err := c.fd.Read(b)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &amp;&amp; err != io.EOF &#123;</span><br><span class="line">        err = &amp;OpError&#123;Op: <span class="string">"read"</span>, Net: c.fd.net, Source: c.fd.laddr, Addr: c.fd.raddr, Err: err&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> n, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *netFD)</span> <span class="title">Read</span><span class="params">(p []<span class="keyword">byte</span>)</span> <span class="params">(n <span class="keyword">int</span>, err error)</span></span> &#123;</span><br><span class="line">    n, err = fd.pfd.Read(p)</span><br><span class="line">    runtime.KeepAlive(fd)</span><br><span class="line">    <span class="keyword">return</span> n, wrapSyscallError(<span class="string">"read"</span>, err)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Read implements io.Reader.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(fd *FD)</span> <span class="title">Read</span><span class="params">(p []<span class="keyword">byte</span>)</span> <span class="params">(<span class="keyword">int</span>, error)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> err := fd.readLock(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">defer</span> fd.readUnlock()</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(p) == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>, <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//把pollDesc.rg置为0</span></span><br><span class="line">    <span class="keyword">if</span> err := fd.pd.prepareRead(fd.isFile); err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>, err</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//最多只能读maxRW</span></span><br><span class="line">    <span class="keyword">if</span> fd.IsStream &amp;&amp; <span class="built_in">len</span>(p) &gt; maxRW &#123;</span><br><span class="line">        p = p[:maxRW]</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="comment">//尝试从fd.Sysfd中读取数据，或读取成功，则直接返回。或返回errcode为EAGAIN，则gopark当前g</span></span><br><span class="line">        n, err := syscall.Read(fd.Sysfd, p)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            n = <span class="number">0</span></span><br><span class="line">            <span class="keyword">if</span> err == syscall.EAGAIN &amp;&amp; fd.pd.pollable() &#123;</span><br><span class="line">                <span class="keyword">if</span> err = fd.pd.waitRead(fd.isFile); err == <span class="literal">nil</span> &#123;</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// On MacOS we can see EINTR here if the user</span></span><br><span class="line">            <span class="comment">// pressed ^Z.  See issue #22838.</span></span><br><span class="line">            <span class="keyword">if</span> runtime.GOOS == <span class="string">"darwin"</span> &amp;&amp; err == syscall.EINTR &#123;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        err = fd.eofError(n, err)</span><br><span class="line">        <span class="keyword">return</span> n, err</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-4-轮询epoll"><a href="#1-4-轮询epoll" class="headerlink" title="1.4 轮询epoll"></a>1.4 轮询epoll</h5><p>在1.1~1.3的源码中，我们已经看到了<code>golang</code>对<code>epoll</code>中<code>epoll_create</code>、<code>epoll_ctrl</code>的封装，但没看到<code>epoll_wait</code>。而且在1.2，1.3的源码中，<code>accept</code>, <code>Read</code>如果返回<code>EAGAIN</code>时，当前<code>g</code>会被<code>gopark</code>。下面我们就来看下<code>epoll_wait</code>是何时被调用的，以及由于<code>EAGAIN</code>而被<code>gopark</code>的<code>g</code>是何时被唤醒的。在<code>sysmon</code>和<code>findrunnable</code>中会调用<code>netpoll</code>函数，返回所有就绪<code>fd</code>上的<code>g</code>，并加入到全局队列中。<code>accept</code>、<code>Read</code>、<code>Write</code>被<code>gopark</code>的<code>g</code>的指针都保存在<code>pollDesc</code>中，所以<code>fd</code>一旦就绪，我们可通过<code>wg</code>或<code>rg</code>找到<code>g</code>并交<code>runtime</code>，<code>runtime</code>会把它从<code>_Gwaiting</code>状态置为<code>_Grunnable</code>，此时就绪的g就可以接着<code>gopark</code>时的状态继续执行。需要注意的是<code>ep_poll_callback</code>只会唤醒内核线程，被<code>gopark</code>的<code>g</code>则在<code>runtime</code>中唤醒的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpoll</span><span class="params">(block <span class="keyword">bool</span>)</span> <span class="title">gList</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> epfd == <span class="number">-1</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> gList&#123;&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    waitms := <span class="keyword">int32</span>(<span class="number">-1</span>)</span><br><span class="line">    <span class="keyword">if</span> !block &#123;</span><br><span class="line">        waitms = <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> events [<span class="number">128</span>]epollevent</span><br><span class="line">retry:</span><br><span class="line">    <span class="comment">//下面的代码跟我们前面介绍epoll使用时的代码非常相似</span></span><br><span class="line">    n := epollwait(epfd, &amp;events[<span class="number">0</span>], <span class="keyword">int32</span>(<span class="built_in">len</span>(events)), waitms)<span class="comment">//轮询是否有事件发生，并通过events参数返回就绪(触发)的事件列表</span></span><br><span class="line">    <span class="keyword">if</span> n &lt; <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> n != -_EINTR &#123;</span><br><span class="line">            <span class="built_in">println</span>(<span class="string">"runtime: epollwait on fd"</span>, epfd, <span class="string">"failed with"</span>, -n)</span><br><span class="line">            throw(<span class="string">"runtime: netpoll failed"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">goto</span> retry</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">var</span> toRun gList</span><br><span class="line">    <span class="keyword">for</span> i := <span class="keyword">int32</span>(<span class="number">0</span>); i &lt; n; i++ &#123;<span class="comment">//取出并处理事件</span></span><br><span class="line">        ev := &amp;events[i]</span><br><span class="line">        <span class="keyword">if</span> ev.events == <span class="number">0</span> &#123;</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">var</span> mode <span class="keyword">int32</span><span class="comment">//取出事件类型，读、写</span></span><br><span class="line">        <span class="keyword">if</span> ev.events&amp;(_EPOLLIN|_EPOLLRDHUP|_EPOLLHUP|_EPOLLERR) != <span class="number">0</span> &#123;</span><br><span class="line">            mode += <span class="string">'r'</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> ev.events&amp;(_EPOLLOUT|_EPOLLHUP|_EPOLLERR) != <span class="number">0</span> &#123;</span><br><span class="line">            mode += <span class="string">'w'</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> mode != <span class="number">0</span> &#123;</span><br><span class="line">            pd := *(**pollDesc)(unsafe.Pointer(&amp;ev.data))</span><br><span class="line">            pd.everr = <span class="literal">false</span></span><br><span class="line">            <span class="keyword">if</span> ev.events == _EPOLLERR &#123;</span><br><span class="line">                pd.everr = <span class="literal">true</span></span><br><span class="line">            &#125;</span><br><span class="line">            netpollready(&amp;toRun, pd, mode)<span class="comment">//取出gopark的g并重置rg,wg</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> block &amp;&amp; toRun.empty() &#123;</span><br><span class="line">        <span class="keyword">goto</span> retry</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> toRun</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollready</span><span class="params">(toRun *gList, pd *pollDesc, mode <span class="keyword">int32</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> rg, wg *g</span><br><span class="line">    <span class="keyword">if</span> mode == <span class="string">'r'</span> || mode == <span class="string">'r'</span>+<span class="string">'w'</span> &#123;</span><br><span class="line">        rg = netpollunblock(pd, <span class="string">'r'</span>, <span class="literal">true</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> mode == <span class="string">'w'</span> || mode == <span class="string">'r'</span>+<span class="string">'w'</span> &#123;</span><br><span class="line">        wg = netpollunblock(pd, <span class="string">'w'</span>, <span class="literal">true</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> rg != <span class="literal">nil</span> &#123;</span><br><span class="line">        toRun.push(rg) <span class="comment">//取出gopark的g加入toRun列表，交给runtime处理</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> wg != <span class="literal">nil</span> &#123;</span><br><span class="line">        toRun.push(wg)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">netpollunblock</span><span class="params">(pd *pollDesc, mode <span class="keyword">int32</span>, ioready <span class="keyword">bool</span>)</span> *<span class="title">g</span></span> &#123;</span><br><span class="line">    gpp := &amp;pd.rg</span><br><span class="line">    <span class="keyword">if</span> mode == <span class="string">'w'</span> &#123;</span><br><span class="line">        gpp = &amp;pd.wg</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        old := *gpp</span><br><span class="line">        <span class="keyword">if</span> old == pdReady &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> old == <span class="number">0</span> &amp;&amp; !ioready &#123;</span><br><span class="line">            <span class="comment">// Only set READY for ioready. runtime_pollWait</span></span><br><span class="line">            <span class="comment">// will check for timeout/cancel before waiting.</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">var</span> <span class="built_in">new</span> <span class="keyword">uintptr</span></span><br><span class="line">        <span class="keyword">if</span> ioready &#123;</span><br><span class="line">            <span class="built_in">new</span> = pdReady</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> atomic.Casuintptr(gpp, old, <span class="built_in">new</span>) &#123;<span class="comment">//重置rg或wg</span></span><br><span class="line">            <span class="keyword">if</span> old == pdReady || old == pdWait &#123;</span><br><span class="line">                old = <span class="number">0</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> (*g)(unsafe.Pointer(old))<span class="comment">//取出被gopark的g</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>参考<br><a href="https://taohuawu.club/go-netpoll-io-multiplexing-reactor" target="_blank" rel="noopener">https://taohuawu.club/go-netpoll-io-multiplexing-reactor</a><br><a href="http://gityuan.com/2019/01/06/linux-epoll/" target="_blank" rel="noopener">http://gityuan.com/2019/01/06/linux-epoll/</a><br><a href="https://zhuanlan.zhihu.com/p/64746509" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/64746509</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/06/01/golang/runtime/" rel="next" title="Golang Runtime">
+                <i class="fa fa-chevron-left"></i> Golang Runtime
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">13</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、epoll实现"><span class="nav-text">一、epoll实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-例子"><span class="nav-text">1.1 例子</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-结构体"><span class="nav-text">1.2 结构体</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-原理"><span class="nav-text">1.3 原理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-事件"><span class="nav-text">1.4 事件</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、Golang-Netpoll-实现"><span class="nav-text">二、Golang Netpoll 实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-例子-1"><span class="nav-text">1.1 例子</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-结构体-1"><span class="nav-text">1.2 结构体</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-源码"><span class="nav-text">1.3 源码</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-Listen"><span class="nav-text">1.1 Listen</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-Accept"><span class="nav-text">1.2 Accept</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-Read-Write"><span class="nav-text">1.3 Read/Write</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-4-轮询epoll"><span class="nav-text">1.4 轮询epoll</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
