@@ -320,190 +320,6 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/01/golang/runtime/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content>
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="lifan's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2020/06/01/golang/runtime/" class="post-title-link" itemprop="url">Golang Runtime</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2020-06-01 22:54:06" itemprop="dateCreated datePublished" datetime="2020-06-01T22:54:06+08:00">2020-06-01</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2020-07-05 19:29:44" itemprop="dateModified" datetime="2020-07-05T19:29:44+08:00">2020-07-05</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h4 id="一、基础知识"><a href="#一、基础知识" class="headerlink" title="一、基础知识"></a>一、基础知识</h4><p>在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。</p>
-<ul>
-<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对基调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。用户级线程也叫协程(coroutine)。比如：Lua的coroutine</li>
-<li>内核级线程：由内核管理、调度线程。也就是我们通常所说的线程。</li>
-<li>混合模型：进程中可以同时有多个内核线程(thread)和多个用户线程(coroutine)，用户线程只有绑定内核线程才能被执行，多个用户线程可以同时绑定到一个内核线程上，由runtime负责用户线程的调度以及用户线程与内核线程的绑定与解绑。golang就是采用此模型。</li>
-<li>OS调度：线程是OS调度的基本单位(linux上叫轻量进程)，在windows和linux上，可以通过CreateThread和clone创建线程，创建线程需要传递入口地址(通常是函数)，线程从这个入口地址开始执行。因为OS中的线程数量大部分时候是&gt;CPU核心数，OS为了确保每个线程都能得到公平的执行提出了时间片的概念,即每个线程只能持续执行一段时间，时间片到了后，保存上下文，切换到其它线程。上下文包含了2个重要的信息分别是PC和堆栈，记录它们可以确保线程被中断后，下次无论在哪个核上都能接着上次中断的现场继续执行。
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2020/06/01/golang/runtime/" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </li></ul></div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/01/golang/netpoll/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -633,6 +449,190 @@
         
       
     </p></div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/01/golang/runtime/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2020/06/01/golang/runtime/" class="post-title-link" itemprop="url">Golang Runtime</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-06-01 22:54:06" itemprop="dateCreated datePublished" datetime="2020-06-01T22:54:06+08:00">2020-06-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-07-05 22:45:25" itemprop="dateModified" datetime="2020-07-05T22:45:25+08:00">2020-07-05</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h4 id="一、基础知识"><a href="#一、基础知识" class="headerlink" title="一、基础知识"></a>一、基础知识</h4><p>在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。</p>
+<ul>
+<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对基调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。用户级线程也叫协程(coroutine)。比如：Lua的coroutine</li>
+<li>内核级线程：由内核管理、调度线程。也就是我们通常所说的线程。</li>
+<li>混合模型：进程中可以同时有多个内核线程(thread)和多个用户线程(coroutine)，用户线程只有绑定内核线程才能被执行，多个用户线程可以同时绑定到一个内核线程上，由runtime负责用户线程的调度以及用户线程与内核线程的绑定与解绑。golang就是采用此模型。</li>
+<li>OS调度：线程是OS调度的基本单位(linux上叫轻量进程)，在windows和linux上，可以通过CreateThread和clone创建线程，创建线程需要传递入口地址(通常是函数)，线程从这个入口地址开始执行。因为OS中的线程数量大部分时候是&gt;CPU核心数，OS为了确保每个线程都能得到公平的执行提出了时间片的概念,即每个线程只能持续执行一段时间，时间片到了后，保存上下文，切换到其它线程。上下文包含了2个重要的信息分别是PC和堆栈，记录它们可以确保线程被中断后，下次无论在哪个核上都能接着上次中断的现场继续执行。
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2020/06/01/golang/runtime/" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </li></ul></div>
 
     
 
