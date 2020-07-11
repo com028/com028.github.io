@@ -113,7 +113,7 @@
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnetion_dump.png">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_status_machine.jpg">
-<meta property="og:updated_time" content="2020-01-08T06:07:04.000Z">
+<meta property="og:updated_time" content="2020-07-11T03:02:46.212Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP学习笔记">
 <meta name="twitter:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
@@ -381,22 +381,6 @@
             
 
             
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2020-01-08 14:07:04" itemprop="dateModified" datetime="2020-01-08T14:07:04+08:00">2020-01-08</time>
-              
-            
           </span>
 
           
@@ -461,7 +445,7 @@
 <li>序号(seq)：TCP是可靠的传输协议，会对每个包编号，便于确认和重传。</li>
 <li>确认序号(ack)：收到的序号+1(ack=seq+1),只有ACK标志位为1时，确认序号字段才有效。</li>
 <li>标志位：SYN：发起一个新连接; ACK：确认序号; FIN：释放一个连接; RST：重置连接; </li>
-<li>PSH：接收方应该尽快将这个报文交给应用层。</li>
+<li>PSH：发送方会立即发出数据，接收方收到这个报会立即文交给应用层。</li>
 <li>16位窗口大小：用于动态反映接收端读缓冲大小。</li>
 <li>数据：应用层数据</li>
 </ul>
