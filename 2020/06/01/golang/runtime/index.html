@@ -96,17 +96,17 @@
 
 
 
-  <meta name="description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户">
+  <meta name="description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当内核线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang Runtime">
 <meta property="og:url" content="http://yoursite.com/2020/06/01/golang/runtime/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户">
+<meta property="og:description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当内核线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-07-11T03:14:26.519Z">
+<meta property="og:updated_time" content="2020-07-12T15:02:31.974Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang Runtime">
-<meta name="twitter:description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户">
+<meta name="twitter:description" content="一、基础知识在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。  用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当内核线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线">
 
 
 
@@ -421,7 +421,7 @@
       
         <h4 id="一、基础知识"><a href="#一、基础知识" class="headerlink" title="一、基础知识"></a>一、基础知识</h4><p>在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。</p>
 <ul>
-<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线程。</li>
+<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当内核线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线程。</li>
 <li>轻量级进程(LWP)：Linux中没有线程概念，跟线程比较相似的是轻量级进程(LWP)，一个进程中可以有多个LWT。LWP需要和内核线程绑定才能被执行，与内核线程是一对一的绑定关系。为了方便理解，我们直接把LWP看成是内核线程。</li>
 <li>混合模型：进程中可以同时有多个内核线程和多个用户线程，用户线程只有绑定内核线程才能被执行，多个用户线程可以进入同一个内核线程的执行队列，由runtime负责用户线程的调度以及用户线程与内核线程的绑定与解绑。golang就是采用此模型。<a id="more"></a></li>
 <li>OS调度：线程是内核调度的基本单位，在windows和linux上，可以通过CreateThread和clone创建线程(Linux clone创建的是LWP)，创建线程需要传递入口地址(通常是函数)，线程从这个入口地址开始执行。因为OS中的线程数量大部分时候是&gt;CPU核心数，OS为了确保每个线程都能得到公平的执行提出了时间片的概念,即每个线程只能持续执行一段时间，时间片到了后，保存上下文，切换到其它线程。上下文包含了2个重要的信息分别是PC和堆栈，记录它们可以确保线程被中断后，下次无论在哪个核上都能接着上次中断的现场继续执行。</li>

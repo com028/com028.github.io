@@ -98,14 +98,14 @@
 
   <meta name="description" content="最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。 问题描述服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Golang内存分配及回收">
+<meta property="og:title" content="Golang内存分配">
 <meta property="og:url" content="http://yoursite.com/2019/09/25/memory/golang-memory/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
 <meta property="og:description" content="最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。 问题描述服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-04-12T12:38:06.370Z">
+<meta property="og:updated_time" content="2020-07-11T08:55:03.650Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Golang内存分配及回收">
+<meta name="twitter:title" content="Golang内存分配">
 <meta name="twitter:description" content="最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。 问题描述服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分">
 
 
@@ -124,7 +124,7 @@
   };
 </script>
 
-  <title>Golang内存分配及回收 | lifan's blog</title>
+  <title>Golang内存分配 | lifan's blog</title>
   
 
 
@@ -340,7 +340,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Golang内存分配及回收
+          <h1 class="post-title" itemprop="name headline">Golang内存分配
 
               
             

@@ -585,7 +585,7 @@
         
           <h4 id="一、基础知识"><a href="#一、基础知识" class="headerlink" title="一、基础知识"></a>一、基础知识</h4><p>在阅读源码前，我们先来熟悉一下相关的基础知识，这是理解runtime的基础。</p>
 <ul>
-<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当其中一个线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线程。</li>
+<li>用户级线程：由用户运行时(runtime)来管理线程，操作系统不能感知其存在，所以也不会对其调度，一般会在用户空间提供一个线程库来操作它们。在进程中多个用户级线程对应一个内核级线程，当内核线程阻塞，进程中的所有线程都会被阻塞。Lua的协程(coroutine)、golang的goroutine都属于用户级线程。</li>
 <li>轻量级进程(LWP)：Linux中没有线程概念，跟线程比较相似的是轻量级进程(LWP)，一个进程中可以有多个LWT。LWP需要和内核线程绑定才能被执行，与内核线程是一对一的绑定关系。为了方便理解，我们直接把LWP看成是内核线程。</li>
 <li>混合模型：进程中可以同时有多个内核线程和多个用户线程，用户线程只有绑定内核线程才能被执行，多个用户线程可以进入同一个内核线程的执行队列，由runtime负责用户线程的调度以及用户线程与内核线程的绑定与解绑。golang就是采用此模型。
           <!--noindex-->
@@ -1248,9 +1248,12 @@
 
       
         
-          <h4 id="一、互斥锁Mutex"><a href="#一、互斥锁Mutex" class="headerlink" title="一、互斥锁Mutex"></a>一、互斥锁Mutex</h4><p>互斥锁的基本思想就是自旋转等待锁释放，拿到则返回；没拿到则进入队列等待，等久了则切换为饥饿模式；如果是饥饿模式，unlock会直接把锁交给队首饥饿的gotoutine。</p>
-<h5 id="1-1-Mutex普通模式和饥饿模式的相互切换"><a href="#1-1-Mutex普通模式和饥饿模式的相互切换" class="headerlink" title="1.1 Mutex普通模式和饥饿模式的相互切换"></a>1.1 Mutex普通模式和饥饿模式的相互切换</h5><ul>
-<li>普通模式：需要拿锁的goroutine在队列(FIFO)中排队等待，被唤醒的goroutine会和新到来的goroutine竞争mutex。新到来的goroutine因为已经在CPU上运行且数量可能很多，所以获得锁的机会明显要比唤醒的goroutine大。在这种情况下被唤醒的goroutine会插入到等待队列前面，如果有goroutine等待时间超过1ms，就会把mutex切换成饥饿模式。
+          <h4 id="一、相关概念"><a href="#一、相关概念" class="headerlink" title="一、相关概念"></a>一、相关概念</h4><ul>
+<li>互斥锁(mutex)：获取锁失败时，线程会被休眠让出cpu。当锁被其它线程释放后，阻塞线程被内核唤醒继续执行。这里会产生2次上下文切换。</li>
+<li>自旋转锁(cas)： 获取锁失败时，线程不会被休眠，而是调用pause指令消耗cpu，直到获取成功。因为线程没被暂停所以不会有上下文切换，但由于需要调用pause指令等待锁被释放，所以在获得锁以前会一直消耗cpu。</li>
+<li>读写锁：读写锁可以基于互斥锁或自旋转锁来实现，任意时刻支持多个线程读或者一个线程写。</li>
+</ul>
+<p>适合场景：如果能确定获取锁后会快速释放，优先使用自旋转锁；如果不确定锁的释放时间或需要者长时间占用锁则使用互斥锁；如果读多写少可以考虑读写锁。
           <!--noindex-->
           
             <div class="post-button text-center">
@@ -1262,7 +1265,7 @@
           <!--/noindex-->
         
       
-    </li></ul></div>
+    </p></div>
 
     
 
@@ -1577,7 +1580,7 @@
 
       
         
-          <p>Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的<code>syn.map</code>。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang <code>sync.map</code>是如何实现线程安全的呢？</p>
+          <p>Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的<code>sync.map</code>。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang <code>sync.map</code>是如何实现线程安全的呢？</p>
 <h4 id="一、原理"><a href="#一、原理" class="headerlink" title="一、原理"></a>一、原理</h4><p>通过2个map（read、dirty）来实现读写分离，read、dirty 指向同一个entity。
           <!--noindex-->
           

@@ -96,17 +96,17 @@
 
 
 
-  <meta name="description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+  <meta name="description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的sync.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang Sync.Map 源码分析">
 <meta property="og:url" content="http://yoursite.com/2019/12/11/golang/sync-map-inside/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+<meta property="og:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的sync.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-01-08T06:07:04.000Z">
+<meta property="og:updated_time" content="2020-07-12T09:29:07.115Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang Sync.Map 源码分析">
-<meta name="twitter:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的syn.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）来">
+<meta name="twitter:description" content="Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的sync.map。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang sync.map是如何实现线程安全的呢？ 一、原理通过2个map（read、dirty）">
 
 
 
@@ -419,12 +419,12 @@
       
 
       
-        <p>Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的<code>syn.map</code>。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang <code>sync.map</code>是如何实现线程安全的呢？</p>
+        <p>Golang中存在2种map, 一种是常规的非线程安全map，另一种是线程安全的<code>sync.map</code>。在golang1.9以前，我们在项目中是通过数组、map、sync.RWMutex来实现普通map的并发读写(采用map数组，把key hash到相应的map，每个map单独加锁以降低锁的粒度)，那么golang <code>sync.map</code>是如何实现线程安全的呢？</p>
 <h4 id="一、原理"><a href="#一、原理" class="headerlink" title="一、原理"></a>一、原理</h4><p>通过2个map（read、dirty）来实现读写分离，read、dirty 指向同一个entity。<a id="more"></a></p>
 <ul>
 <li>读数据(Load)：首先从read map中读（无锁），如果不存在，则到dirty map中读（加锁）。</li>
 <li>存数据(Store)：首先查找数据是否在read map中，如果在则更新entity（无锁）；否则在dirty map中查找，如果存在则更新，不存在则新建key（有锁）。</li>
-<li>删除数据(Delete)：如果数据在read map中找到，则直接把<code>entity.p</code>置为nil(无锁)；如果read map中不存在则在dirty map中查找，若找到则删除（有锁），并把<code>entity.p</code>置为nil(无锁)。</li>
+<li>删除数据(Delete)：如果数据在read map中找到，则直接把<code>entity.p</code>置为nil(无锁)；如果read map中不存在则在dirty map中查找，若找到则直接删除（有锁）。之所以read map只置为nil是因为read map是无锁访问的，不能删除数据。</li>
 <li>dirty map提拔为read map<br>在read map中访问数据时，当miss次数&gt;=len(m.dirty)时，会把dirty map提拔为read map(直接修改read map的指针指向dirty map), 并把dirty map置为nil。</li>
 <li>延迟删除<br>删除数据时，如果在read map中找到，并不会立即删除entity；而是把key对应的<code>entity.p</code>置为nil，并在下次构建dirty map时把值为nil的p设为expunged。这个key在read map中会一直存在，直到下次有相同key的数据存入时指向新的value。<br>从上面可以看出：操作read map中的数据，无论是读(Load)、存(Store, 如果key在read map中，则直接更新entity，否则转为修改dirty)、删除(Delete,同Store)都不需要加锁(通过CAS(自旋转锁)实现 <a href="https://zh.wikipedia.org/wiki/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2" target="_blank" rel="noopener">参考</a>)，但对dirty map的所有操作都是加锁的。下面结合源码来看它是如何实现的。</li>
 </ul>
