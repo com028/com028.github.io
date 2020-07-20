@@ -108,7 +108,7 @@
 <meta property="og:image" content="http://yoursite.com/images/aoe/polor-to-cartesian.png">
 <meta property="og:image" content="http://yoursite.com/images/aoe/point-in-sector.png">
 <meta property="og:image" content="http://yoursite.com/images/aoe/sin-cos-tan-graph.png">
-<meta property="og:updated_time" content="2020-01-26T14:16:18.520Z">
+<meta property="og:updated_time" content="2020-07-20T13:34:46.057Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AOE技能目标选择器">
 <meta name="twitter:description" content="本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。 一、矩形区域有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：">
@@ -428,14 +428,13 @@
         <p>本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。</p>
 <h4 id="一、矩形区域"><a href="#一、矩形区域" class="headerlink" title="一、矩形区域"></a>一、矩形区域</h4><p>有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：<br><img width="500" height="200" src="/images/aoe/relative-coordinate.png"></p>
 <a id="more"></a>
-<p>如何判断点在矩形内呢？<br>如上图所求c1为蓝色区域矩形，t1为矩形中的一个点<br>最简单的方法是判断<code>t1.x &gt;= min(c1.x) &amp;&amp; t1.x &lt;= max(c1.x) &amp;&amp; t1.y &gt;= min(c1.y) &amp;&amp; t1.y &lt;= max(c1.y)</code>为<code>true</code>则点在矩形内，否则在矩形外。但是这种方法只有在矩形平行坐标轴时成立，如果攻击者方向不平行坐标轴如图中C2。我们用上面的方法计算时t2与矩形C2的位置关系时，发现它在矩形中，这显然不正确。那该如何计算t2与矩形C2的位置关系呢?<br>如果把施法者p到受击者p2之间的向量看成是新的x轴方向（虚线所示的相对坐标系），被测试点与矩形的关系是不是能用上述方法判断呢？答案是肯定的。下面介绍如何把t2的坐标转换到pp2为x轴的相对坐标，方法如下：</p>
+<p>如何判断点在矩形内呢？<br>如上图所示c1为蓝色区域矩形，t1为矩形中的一个点<br>最简单的方法是判断<code>t1.x &gt;= min(c1.x) &amp;&amp; t1.x &lt;= max(c1.x) &amp;&amp; t1.y &gt;= min(c1.y) &amp;&amp; t1.y &lt;= max(c1.y)</code>为<code>true</code>则点在矩形内，否则在矩形外。但是这种方法只有在矩形平行坐标轴时成立，如果攻击者方向不平行坐标轴如图中C2。我们用上面的方法计算时t2与矩形C2的位置关系时，发现它在矩形中，这显然不正确。那该如何计算t2与矩形C2的位置关系呢?<br>如果把施法者p到受击者p2之间的向量看成是新的x轴方向（虚线所示的相对坐标系），则被测试点与矩形的关系就可以用上术方法来判断。下面介绍如何把t2的坐标转换到pp2为x轴的相对坐标。<br>思路：通过求出被测点t2的极坐标，再通过极坐标转直角坐标就得到了t2的相对坐标，如下：</p>
 <ul>
-<li><p>根据余弦定理：<code>a^2 = b^2 + c^2 - 2bccosθ</code><br>得：<code>cosθ = b^2 + c^2 - a^2 / 2bc</code><br>其中：<code>a</code>为<code>t2p2, b为pt2, c为pp2,θ为角t2pp2</code></p>
-</li>
-<li><p>极坐标定义：该坐标系统中任意位置可由一个夹角和一段相对原点(极点)的距离来表示</p>
+<li><p>极坐标定义：该坐标系中任意位置可由一个夹角和一段相对原点(极点)的距离来表示，例如pt可以表示为(|pt|, t2pp2度数)</p>
 <img width="350" height="200" src="/images/aoe/polor-coordiate.png">
-
-
+在本例中，已知p和t2的坐标，则|pt2|的值为径向坐标；因为已知三角形pt2p2的三边，根据余弦定理可求出角t2pp2的角度，即极坐标的角坐标
+</li>
+<li><p>根据余弦定理：<code>a^2 = b^2 + c^2 - 2bccosθ</code><br>得：<code>cosθ = b^2 + c^2 - a^2 / 2bc</code><br>其中：<code>a</code>为<code>t2p2, b为pt2, c为pp2,θ为角t2pp2</code></p>
 </li>
 </ul>
 <p>根据极坐标与直角坐标转换公式可得：<br>假设t2的相对坐标为<code>(tr.x, tr.y)</code>则

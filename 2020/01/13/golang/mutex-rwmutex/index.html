@@ -103,7 +103,7 @@
 <meta property="og:site_name" content="lifan&#39;s blog">
 <meta property="og:description" content="一、相关概念 互斥锁(mutex)：获取锁失败时，线程会被休眠让出cpu。当锁被其它线程释放后，阻塞线程被内核唤醒继续执行。这里会产生2次上下文切换。 自旋转锁(cas)： 获取锁失败时，线程不会被休眠，而是调用pause指令消耗cpu，直到获取成功。因为线程没被暂停所以不会有上下文切换，但由于需要调用pause指令等待锁被释放，所以在获得锁以前会一直消耗cpu。 读写锁：读写锁可以基于互斥锁或自">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-07-14T14:10:43.017Z">
+<meta property="og:updated_time" content="2020-07-14T14:17:41.277Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang 互斥锁、读写锁实现">
 <meta name="twitter:description" content="一、相关概念 互斥锁(mutex)：获取锁失败时，线程会被休眠让出cpu。当锁被其它线程释放后，阻塞线程被内核唤醒继续执行。这里会产生2次上下文切换。 自旋转锁(cas)： 获取锁失败时，线程不会被休眠，而是调用pause指令消耗cpu，直到获取成功。因为线程没被暂停所以不会有上下文切换，但由于需要调用pause指令等待锁被释放，所以在获得锁以前会一直消耗cpu。 读写锁：读写锁可以基于互斥锁或自">
