@@ -320,6 +320,170 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/09/algorithm/jps-pathfind/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2020/08/09/algorithm/jps-pathfind/" class="post-title-link" itemprop="url">JPS寻路算法</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-08-09 22:01:46" itemprop="dateCreated datePublished" datetime="2020-08-09T22:01:46+08:00">2020-08-09</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/algorithm/" itemprop="url" rel="index"><span itemprop="name">algorithm</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。</p>
+<h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2020/08/09/algorithm/jps-pathfind/" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </p></div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/03/golang/netpoll/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1796,175 +1960,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/30/golang/high-performance-timer/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content>
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="lifan's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2019/10/30/golang/high-performance-timer/" class="post-title-link" itemprop="url">Golang Timer 源码探索及常见问题</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-30 16:54:06" itemprop="dateCreated datePublished" datetime="2019-10-30T16:54:06+08:00">2019-10-30</time>
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>最近使用golang timer时写出了bug, 为了避免再出现类似问题以及对goalng timer实现细节的好奇，阅读了一遍timer的源码。golang timer使用的是时间堆算法。</p>
-<h4 id="一、-时间堆算法原理"><a href="#一、-时间堆算法原理" class="headerlink" title="一、 时间堆算法原理"></a>一、 时间堆算法原理</h4><p>时间堆算法的底层数据结构是基于数组的小顶堆，任意一个节点的值比其孩子节点值小，堆中最小元素总是位于根节点。用于定时器的堆一般为2叉堆或4叉堆。Golang Timer使用的是桶(Bucket)+4叉堆，每个桶包含1个4叉小顶堆。</p>
-<ul>
-<li><strong>节点访问</strong> <br><ul>
-<li>堆是一棵完全二叉树（N叉树）,因此可以很方便的用二维数组来表示，在数组起始位置为0的4叉堆中：</li>
-<li>任意节点i的父节点为：<code>p := (i - 1) / 4</code></li>
-<li>任意节点i的左孩子点为：<code>lc := i*4 + 1</code>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2019/10/30/golang/high-performance-timer/" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </li></ul></li></ul></div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2011,7 +2006,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">13</span>
+                    <span class="site-state-item-count">14</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
