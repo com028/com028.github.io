@@ -420,7 +420,7 @@
       
         
           <p>TCP/IP相关的基础知识、术语已经在之前的<a href="https://lifan.tech/2019/11/20/protocal/tcpip_summary/" target="_blank" rel="noopener">文章</a>中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。</p>
-<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="500" height="200" src="/images/tcpip/tcp_handshake.jpg">
+<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="400" height="160" src="/images/tcpip/tcp_handshake.jpg">
 
 <h5 id="1-1-三次握手流程"><a href="#1-1-三次握手流程" class="headerlink" title="1.1 三次握手流程"></a>1.1 三次握手流程</h5><p>1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。<br>2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。
           <!--noindex-->
