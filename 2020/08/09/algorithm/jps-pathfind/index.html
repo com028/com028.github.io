@@ -109,7 +109,7 @@
 <meta property="og:image" content="http://yoursite.com/images/jps/area_unreachable.png">
 <meta property="og:image" content="http://yoursite.com/images/jps/prune.png">
 <meta property="og:image" content="http://yoursite.com/images/jps/opti_path.png">
-<meta property="og:updated_time" content="2020-08-09T10:40:45.837Z">
+<meta property="og:updated_time" content="2020-09-02T13:53:49.260Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JPS寻路算法">
 <meta name="twitter:description" content="JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。 一、概念JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。">
@@ -492,7 +492,7 @@
 <li>如果dx，dy不相等，则需要加入中间拐点，拐点位置为，jp(i)沿对角线方向走min(dx,dy)。</li>
 </ul>
 <p>根据拐点添加规则，本例中我们在跳点1，6之间加入跳点5，所以最终路径为：0，5，6。</p>
-<h5 id="1-3-路径优化"><a href="#1-3-路径优化" class="headerlink" title="1.3 路径优化"></a>1.3 路径优化</h5><p>有时两点之间本可以走直线的，但根据JPS的寻路特性，可能在两点间加入”多余”的拐点，我们希望的是尽量走直线。如下图所示：<br><img width="400" height="200" src="/images/jps/opti_path.png"></p>
+<h5 id="1-3-路径优化"><a href="#1-3-路径优化" class="headerlink" title="1.3 路径优化"></a>1.3 路径优化</h5><p>有时两点之间本可以走直线的，但根据JPS的寻路特性，可能在两点间加入”多余”的拐点，我们希望的是尽量走直线。如下图所示：<br><img width="400" height="200" src="/images/jps/opti_path.png"> </p>
 <p>从起点出发（绿色格子），对角线搜索到灰格子处时，沿水平分量搜索遇到跳点（红色，即终点），由跳点定义1可知，灰色格子也是跳点。最终路径为：绿色格子、灰色格子、红色格子。从图中可以看出，从起点到终点是可以走直线的，但JPS找出的路径却多了中间节点，这在游戏中的表现可能比较诡异。因此我们需要优化JPS搜索到的路径，方法如下：<br>假如：JPS得到的路径为 A、B、C、D、E、F、G。我们需要判断，A到C是否直线可达，如果可达；继续判断A到D是否可达，如果不可达，则删除路径点B，当前路径点为A、C、D、E、F、G。继续判断C到E是否可以，以此类推直到终点。<br>那么如何判断两格子之间是否直线可达呢？<br>这里可以通过bresenham算法判断，如果直线上有格子是阻档，则不可达，否则可达。</p>
 <p>参考<br>腾讯游戏开发精粹<br><a href="https://zerowidth.com/2013/a-visual-explanation-of-jump-point-search.html" target="_blank" rel="noopener">https://zerowidth.com/2013/a-visual-explanation-of-jump-point-search.html</a></p>
 
@@ -534,6 +534,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/09/06/protocal/tcpip_param/" rel="prev" title="TCP/IP 调优">
+                TCP/IP 调优 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -602,7 +606,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-count">15</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>

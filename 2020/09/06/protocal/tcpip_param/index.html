@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="TCP/IP相关的基础知识、术语已经在之前的文章中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。 一、三次握手  1.1 三次握手流程1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP&#x2F;IP 调优">
+<meta property="og:url" content="http://yoursite.com/2020/09/06/protocal/tcpip_param/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="TCP/IP相关的基础知识、术语已经在之前的文章中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。 一、三次握手  1.1 三次握手流程1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_handshake.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/traditional_congestion_avoidance.png">
+<meta property="og:image" content="http://yoursite.com/images/tcpip/bbr_inflight.jpg">
+<meta property="og:updated_time" content="2020-09-09T14:06:59.045Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TCP&#x2F;IP 调优">
+<meta name="twitter:description" content="TCP/IP相关的基础知识、术语已经在之前的文章中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。 一、三次握手  1.1 三次握手流程1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。">
+<meta name="twitter:image" content="http://yoursite.com/images/tcpip/tcp_handshake.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/09/06/protocal/tcpip_param/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>TCP/IP 调优 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/06/protocal/tcpip_param/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TCP/IP 调优
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-09-06 15:00:00" itemprop="dateCreated datePublished" datetime="2020-09-06T15:00:00+08:00">2020-09-06</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/protocal/" itemprop="url" rel="index"><span itemprop="name">protocal</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>TCP/IP相关的基础知识、术语已经在之前的<a href="https://lifan.tech/2019/11/20/protocal/tcpip_summary/" target="_blank" rel="noopener">文章</a>中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。</p>
+<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="500" height="200" src="/images/tcpip/tcp_handshake.jpg">
+
+<h5 id="1-1-三次握手流程"><a href="#1-1-三次握手流程" class="headerlink" title="1.1 三次握手流程"></a>1.1 三次握手流程</h5><p>1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。<br>2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。<a id="more"></a><br>3）客户端收到SYN+ACK后，回复ACK，进入ESTABLISHD状态。<br>4）服务器收到ACK后，把连接从半连接队列移到accept队列中，进入ESTABLISHD状态。</p>
+<h5 id="1-2-三次握手参数"><a href="#1-2-三次握手参数" class="headerlink" title="1.2 三次握手参数"></a>1.2 三次握手参数</h5><h6 id="1-1-半连接队列"><a href="#1-1-半连接队列" class="headerlink" title="1.1 半连接队列"></a>1.1 半连接队列</h6><p>在step2时若服务器半连接队列已经满，则请求建立新连接的SYN会被丢弃。可通过如下方式查看。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -s | grep "SYNs to LISTEN"#被丢弃的SYN数量</span><br></pre></td></tr></table></figure>
+
+<p>可以通过内核参数调大半连接队列大小</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_max_syn_backlog = 1024 #半连接队列大小（累计值）</span><br></pre></td></tr></table></figure>
+
+<p>如果想在半连接队列已满的情况下继续建立连接可通过开启syncookies实现，syncookies的原理是在服务器发送SYN+ACK时生成一个验证码，客户端回复ACK时再验证，如果验证通过则连接成功。正常情况下半连接队列是不会满的，为了预防SYN泛洪攻击，可以把synccookies改为半连接队列满后再启动。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_syncookies = 1 #0关闭，1半连接队列满后启用，2无条件启用</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-2-重发SYN-ACK"><a href="#1-2-重发SYN-ACK" class="headerlink" title="1.2 重发SYN+ACK"></a>1.2 重发SYN+ACK</h6><p>若服务器发送SYN+ACK后一段时间内没收到ACK则会重发SYN+ACK，我们可以根据情况设置重发次数</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_synack_retries = 5 #第一次到第5次分别时间间隔为  1s, 2s, 4s, 8s, 16s，32s</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-3-Accept队列"><a href="#1-3-Accept队列" class="headerlink" title="1.3 Accept队列"></a>1.3 Accept队列</h6><p>当服务器收到ACK后(step4)，会把连接从半连接队列移除，加入到accept队列中，等待用户进程调用accept，若此时accept队列已满，则会造成accept队列溢出，此连接被丢弃。可通过如下参数配置</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_abort_on_overflow = 0</span><br></pre></td></tr></table></figure>
+
+<p>当此参数为0时：若accept队列溢出当前accept会被丢弃，但不会从半连接队列中移除，因为客户端发完ACK后已经进入ESTABLISH状态，在偿试向服务器发送消息时，如果多次发送失败，则会重新发送ACK，此时如果服务器已经退回半连接状态则可以重新偿试建立连接，如果这时候accept队列有空位，则连接建立成功。<br>当此参数为1时：则accept队列满后直接发送RST到客户端，关闭连接。通常情况下，设为0即可，如果非常肯定经常会益出，则设置为1，当然也可以直接调大半连接队列</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.core.somaxconn = 128</span><br></pre></td></tr></table></figure>
+
+<p>通过如下命令可以查看溢出情况</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -s | grep "listen queue"</span><br></pre></td></tr></table></figure>
+
+<p>当下各监听端口上的 accept 队列长度可以通过<code>ss -ltn</code>命令查看</p>
+<h6 id="1-4-TFO"><a href="#1-4-TFO" class="headerlink" title="1.4 TFO"></a>1.4 TFO</h6><p>通常情况下，我们需要在三次握手结束后才能发送数据。但开启TFO使得我们可以在第1次握手时就能发送数据，TFO是这样实现的：第一次建立连接时走正常的TCP三次握手流程，服务器会把客户端ip地址加密作为Cookie携带在SYN+ACK包中发给客户端。下次客户端再连接服务器时，就可以在第1次握手时发送数据了，但第1次握手只能使用sendto或sendmsg（因为send必须在连接建立后才能使用）。服务器收到sendto后会验证Cookie若通过，除了通知用户进程外还会向客户端发送SYN+ACK，虽然客户端会回复ACK但服务器丢弃它。若要开启此功能需要客户端和服务器同时支持，配置如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_fastopen = 3 #按比特位控制，第1位为1表示作为客户端时支持，第2位为1表示作为服务器时支持，第1、2位同时为1表示作为客户端和服务器时都支持</span><br></pre></td></tr></table></figure>
+
+<h4 id="二、四次挥手"><a href="#二、四次挥手" class="headerlink" title="二、四次挥手"></a>二、四次挥手</h4><p>断开连接的方式大概分为2种：直接发送RST标志位和四次挥手。正常情况下内核会通过四次挥手来关闭连接，非正常情况（比如：进程挂掉，对方端口不能访问）内核会通过发送RST标志位来关闭连接，但通过RST关闭连接不是绝对安全的(假如：进程A和进程B建立了连接，进程A突然挂了，此时内核会向进程B发送RST，如果RST在网络中出现了延迟，A已经完成了重启并和B重新建立了连接，此时RST到达B，B会意外关闭连接)<br><img width="500" height="200" src="/images/tcpip/tcp_disconnection.jpg"></p>
+<h5 id="1-1-四次挥手的流程"><a href="#1-1-四次挥手的流程" class="headerlink" title="1.1 四次挥手的流程"></a>1.1 四次挥手的流程</h5><p>1）主动方调用close或shutdown后，内核向被动关闭方发送标志位FIN和序号。主动关闭方状态切换为FIN-WAIT1，并进入半关闭状态。若通过close关闭的连接，则当前连接变成孤儿连接，内核会丢弃被动关闭方发来的数据，主动关闭方通过netstat -p查看时进程名为空。<br>2）被动方收到FIN+序号，回复ACK、序号+1，被动关闭方状态切换为CLOSE_WAIT。如果主动关闭方是通过shutdown关闭连接，被动关闭方在CLOSE_WAIT状态下允许向主动关闭方继续发送消息；若主动关闭方通过close关闭的连接，则不会向主关闭方发送数据。<br>3) 主动关闭方收到ACK、序号+1，状态切换为FIN_WAIT2，如果step1是调用shutdown此时主动关闭方的发送通道正式关闭。<br>4）被动关闭方发送FIN和序号，状态切换为LAST_ACK。<br>5）主动关闭方收到FIN和序号，并回复ACK、序号+1，状态切换为WAIT_TIME。主动关闭方会在WAIT_TIME状态下等待2MSL(Linux下为60s，等待2MSL的原因在之前的文章中已经说过)后进入CLOSED状态。<br>6）被动关闭方收到ACK，进入CLOSED状态。</p>
+<h5 id="1-2-四次挥手参数"><a href="#1-2-四次挥手参数" class="headerlink" title="1.2 四次挥手参数"></a>1.2 四次挥手参数</h5><h6 id="1-1-重发FIN"><a href="#1-1-重发FIN" class="headerlink" title="1.1 重发FIN"></a>1.1 重发FIN</h6><p>挥手流程step1发送FIN一段时间后，没收到ACK时会重发FIN消息，重发次数为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_orphan_retries = 0 #0为默认值，表示重新发8次，达到最大重发次数后，依然没收到ACK则会直接关闭连接</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-2-孤儿连接数量"><a href="#1-2-孤儿连接数量" class="headerlink" title="1.2 孤儿连接数量"></a>1.2 孤儿连接数量</h6><p>主动关闭方调用close到成功关闭前，这个连接都属于孤儿连接。如果主动关闭方同时关闭了大量连接，这会造成很多孤儿连接。如果这是正常操作，则可以通过如下参数调整最大孤儿连接数量，超出数量后新增加的孤儿连接内核会通过发送RST关闭掉。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_max_orphans = 16384</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-3-FIN超时"><a href="#1-3-FIN超时" class="headerlink" title="1.3 FIN超时"></a>1.3 FIN超时</h6><p>孤儿连接处于FIN-WAIT2时，不应该等待太久，因为它不需要接收来自被动关闭方的数据。默认值为60s（2MSL）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_fin_timeout = 60</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-4-TIME-WAIT连接数量"><a href="#1-4-TIME-WAIT连接数量" class="headerlink" title="1.4 TIME_WAIT连接数量"></a>1.4 TIME_WAIT连接数量</h6><p>当主动关闭方进入TIME_WAIT状态后会等待2MSL，可以通过参数来调整最大允许处于TIME_WAIT的连接数。当数量超过配置值后，新关闭的连接将不会进入TIME_WAIT状态。并在<code>/var/log/message</code>中输出<code>kernel TCP time wait bucket table overflow</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_max_tw_buckets = 5000 #TIME_WAIT最大连接数</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-5-重用TIME-WAIT端口"><a href="#1-5-重用TIME-WAIT端口" class="headerlink" title="1.5 重用TIME_WAIT端口"></a>1.5 重用TIME_WAIT端口</h6><p>当存在大量状态为TIME_WAIT的连接时，若想允当前机器的进程作为客户端发起连接请求并在安全情况下复用TIME_WAIT状态连接的端口，可通过如下参数配置。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_tw_reuse = 1</span><br><span class="line">net.ipv4.tcp_timestamps = 1</span><br></pre></td></tr></table></figure>
+
+<h4 id="三、缓冲区"><a href="#三、缓冲区" class="headerlink" title="三、缓冲区"></a>三、缓冲区</h4><h5 id="1-1发送和接收流程"><a href="#1-1发送和接收流程" class="headerlink" title="1.1发送和接收流程"></a>1.1发送和接收流程</h5><p>1）应用程序调用send函数往发送缓冲区中写入数据，发送缓冲区满后调用send将被阻塞。<br>2）发送方内核    对数据合并或分片并根据网络状况、接收方当前接收窗口可用大小把发送缓冲区中的数据通过网络发送到接收方。<br>3）接收方收到数据后，把数据拷贝到接收缓冲区，通知应用程序可读，并判断是否立即回复ACK。应用程序读取数据后，释放相应的接收缓冲区，并通过ACK把窗口大小同步给发送方。<br>4）发送方收到ACK后，删除已经确认的数据，释放相应的发送缓冲区。</p>
+<p>网络时延积（BDP）:BDP=网络带宽 * 网络延迟，当已发送但未确认的数据&gt;BDP时继续发送数据就可能导致丢包；当已发送但未确认的数据&lt;BDP时则跑不满带宽。由于网络状况是动态变化的，网络延迟需要反复测量再估算出一个相对准确的值。</p>
+<h5 id="1-2相关参数"><a href="#1-2相关参数" class="headerlink" title="1.2相关参数"></a>1.2相关参数</h5><p>从发送数据流程可以看出，发送缓冲区、接收缓冲区、BDP是影响传输速度的关键；BDP主要受网络环境影响，我们不能改变。而发送缓冲区和接收缓冲区可以通过socket参数SO_SNDBUF和SO_RCVBUF配置固定值。但固定值在大部分情况下显得不合理，因为网络状况、内存是动态变化的。设置太大网络情况不好会浪费内存；设置太小网络情况转好时，不能发挥高速网络的优势，所以大部分情况下会配置成动态调整即可。若同时设置了固定缓冲区大小和动态缓冲区大小，内核会采用固定大小。</p>
+<h6 id="1-1-发送缓冲区"><a href="#1-1-发送缓冲区" class="headerlink" title="1.1 发送缓冲区"></a>1.1 发送缓冲区</h6><p>动态发送缓冲区有3个值，第1个值表示发送缓冲区的最小值，第2个表示默认值，第3个为最大值。内核会根据实际需求(比如：当前内存情况、发送数据量)在值1和值3之间动态调整。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_wmem = 4096 16384 4194304</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-2-接收缓冲区"><a href="#1-2-接收缓冲区" class="headerlink" title="1.2 接收缓冲区"></a>1.2 接收缓冲区</h6><p>接收缓冲区也可以配置成内核自动调整，但情况有些不同。<br>参数1：是否开启接收缓冲区动态调整</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_moderate_rcvbuf = 1</span><br></pre></td></tr></table></figure>
+
+<p>参数2：动态调整的触发条件，当TCP使用的内存&lt;第1个值时不自动调整（使用默认），当在第2、第3个值之间时自动调整接收缓冲区大小，大于第3个值时不再为TCP分配内存，故不能建立新连接。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_mem =  88560  118080  177120 #单位（页：4k）</span><br></pre></td></tr></table></figure>
+
+<p>参数3：接收缓冲区动态调整大小，第1个值表示接收缓冲区的最小值，第2个表示默认值，第3个为最大值。当TCP使用的内存小于tcp_mem第1个值时tcp_rmem使用默认值，TCP使用的内存在tcp_mem第2个值和第3个值之间时，内核会在tcp_rmem的最小值和最大值之间动态调整。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_rmem = 4096   87380   6291456</span><br></pre></td></tr></table></figure>
+
+<h4 id="四、拥塞控制"><a href="#四、拥塞控制" class="headerlink" title="四、拥塞控制"></a>四、拥塞控制</h4><p>若在不考虑拥塞，发送窗口（swnd）的大小等于接收窗口(rwnd)的大小，考虑网络拥塞后，发送窗口大小=min(接收窗口，拥塞窗口(cwnd))。 cwnd的大小可通过如下命令查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ss -nli|fgrep cwnd #linux默认为10 MSS，建立连接后，第一个RTT就可发10 MSS数据，如果默认为1发送10MSS的数据则需要4个RTT。</span><br></pre></td></tr></table></figure>
+
+<p>可通过如下命令修改cwnd默认值</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ip route | while read r; do</span><br><span class="line">    ip route change $r initcwnd 10;</span><br><span class="line">done</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-1-拥塞的判定"><a href="#1-1-拥塞的判定" class="headerlink" title="1.1 拥塞的判定"></a>1.1 拥塞的判定</h5><p>1）如果一个包在指定时间内没收到ACK，则可以断定网络出现了拥塞;<br>2）拥塞窗口的增长到达了慢启动阈值 ssthresh，也就是之前发现网络拥塞时的窗口大小；<br>3）收到重复的ACK报文:假如接收方期待收到的包序号是3，但实际收到的包序号&gt;3，则会重复发送ACK3。</p>
+<h5 id="1-2-网络拥塞算法"><a href="#1-2-网络拥塞算法" class="headerlink" title="1.2 网络拥塞算法"></a>1.2 网络拥塞算法</h5><p>可以通过如下命令查看系统支持的拥塞控制算法</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_available_congestion_control = cubic reno #bbr算法需要linux内核版本&gt;4.9</span><br></pre></td></tr></table></figure>
+
+<p>配置OS当前使用的拥塞控制算法</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_congestion_control = bbr</span><br></pre></td></tr></table></figure>
+
+<h6 id="1-3-传统网络拥塞算法"><a href="#1-3-传统网络拥塞算法" class="headerlink" title="1.3 传统网络拥塞算法"></a>1.3 传统网络拥塞算法</h6><p>传统的拥塞控制算法cubic、reno主要是通过丢包来判断网络是否出现了拥塞，链路中的每个路由器都有自己的缓存，当BDP使用完后，后续的包就会进入路由器的缓存，此时网络开始出现卡顿，RTT开始明显上升，当缓存用完后，后续的包就会被丢弃，传统的拥塞控制算法检查到丢包就会启动拥塞控制，但此时网络已经出现了严重的拥塞。<br>(可能由于历史原因以前的路由器缓存比较小，当出现丢包时，启动拥塞并没有明显的问题；但现在路由器的缓存越来越大，丢包时再启动拥塞控制可能会带来很大的时延。)下图描述了慢启动、拥塞控制的整个过程。<br><img width="500" height="200" src="/images/tcpip/traditional_congestion_avoidance.png"><br>1）慢启动时每收到一个ACK，cwnd+1，直到cwnd达到慢启动门限ssthresh，此时cwnd退出指数变为线性增长每经过一个RTT，cwnd+1<br>2）当丢包发生后，ssthresh降为原来的一半，cwnd重置为1。（丢包分两种情况：1.重复ACK，若收到重复ACK 3次则ssthresh和cwnd降为原来的一半（有丢包现象，但情况不严重）； 2.包出现RTO则说明网络已经很糟糕了，cwnd直接降为1，ssthresh降为原来一半。）<br>3）当cwnd &lt; ssthresh时，继续慢启动流程。<br>4）重复1 ~ 3直到数据发送完毕。</p>
+<h6 id="1-4-基于测量的网络拥塞算法"><a href="#1-4-基于测量的网络拥塞算法" class="headerlink" title="1.4 基于测量的网络拥塞算法"></a>1.4 基于测量的网络拥塞算法</h6><p>传统的拥塞控制算法缺点在于：发生丢包时才启动拥塞控制，此时路由器缓存已被耗尽，网络变得非常拥堵。BBR算法是基于测量的网络拥塞算法代表，它主要通过物理链路时延最小值（TRprop）和瓶颈带宽最大值（BtlBw）来确定网络是否拥塞。<br>TPprop:RTT由包在链路中传输的物理时间、路由器缓存排队时间、ACK延迟确认时间组成。我们只需要测得在不使用缓存情况下RTT的最小值即TPprop。<br>BtlBw:当发送方收到一个ACK时，可以计算出该包的RTT和这段时间内飞行中的报文字节数。speed_rate = delta_delivered/delta_t, BtlBw = max(speed_rate)。<br>BDP: TPprop * BtlBw，当飞行中的报文大于BDP时，开始使用路由器缓存。此时即拥塞控制的最佳点，下图中第一条竖线的位置。<br><img width="500" height="200" src="/images/tcpip/bbr_inflight.jpg"></p>
+<p>由于测量RTprop需要保证此时未使用路由器缓存，而测量BtlBw的方法是在RTT不变的情况下增加发送数据量直至RTT增长，此时会占用一些路由器缓存。所以TRprop和BtlBw不能同时测得，由于网络状况是时时变化的。BBR会定时交替测试最新的TRprop和BtlBw。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/08/09/algorithm/jps-pathfind/" rel="next" title="JPS寻路算法">
+                <i class="fa fa-chevron-left"></i> JPS寻路算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、三次握手"><span class="nav-text">一、三次握手</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-三次握手流程"><span class="nav-text">1.1 三次握手流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-三次握手参数"><span class="nav-text">1.2 三次握手参数</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-半连接队列"><span class="nav-text">1.1 半连接队列</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-重发SYN-ACK"><span class="nav-text">1.2 重发SYN+ACK</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-Accept队列"><span class="nav-text">1.3 Accept队列</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-4-TFO"><span class="nav-text">1.4 TFO</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、四次挥手"><span class="nav-text">二、四次挥手</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-四次挥手的流程"><span class="nav-text">1.1 四次挥手的流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-四次挥手参数"><span class="nav-text">1.2 四次挥手参数</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-重发FIN"><span class="nav-text">1.1 重发FIN</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-孤儿连接数量"><span class="nav-text">1.2 孤儿连接数量</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-FIN超时"><span class="nav-text">1.3 FIN超时</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-4-TIME-WAIT连接数量"><span class="nav-text">1.4 TIME_WAIT连接数量</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-5-重用TIME-WAIT端口"><span class="nav-text">1.5 重用TIME_WAIT端口</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、缓冲区"><span class="nav-text">三、缓冲区</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1发送和接收流程"><span class="nav-text">1.1发送和接收流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2相关参数"><span class="nav-text">1.2相关参数</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-1-发送缓冲区"><span class="nav-text">1.1 发送缓冲区</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-接收缓冲区"><span class="nav-text">1.2 接收缓冲区</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#四、拥塞控制"><span class="nav-text">四、拥塞控制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-拥塞的判定"><span class="nav-text">1.1 拥塞的判定</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-网络拥塞算法"><span class="nav-text">1.2 网络拥塞算法</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-3-传统网络拥塞算法"><span class="nav-text">1.3 传统网络拥塞算法</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-4-基于测量的网络拥塞算法"><span class="nav-text">1.4 基于测量的网络拥塞算法</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

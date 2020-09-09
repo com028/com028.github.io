@@ -320,6 +320,172 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/06/protocal/tcpip_param/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2020/09/06/protocal/tcpip_param/" class="post-title-link" itemprop="url">TCP/IP 调优</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-09-06 15:00:00" itemprop="dateCreated datePublished" datetime="2020-09-06T15:00:00+08:00">2020-09-06</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/protocal/" itemprop="url" rel="index"><span itemprop="name">protocal</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <p>TCP/IP相关的基础知识、术语已经在之前的<a href="https://lifan.tech/2019/11/20/protocal/tcpip_summary/" target="_blank" rel="noopener">文章</a>中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。</p>
+<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="500" height="200" src="/images/tcpip/tcp_handshake.jpg">
+
+<h5 id="1-1-三次握手流程"><a href="#1-1-三次握手流程" class="headerlink" title="1.1 三次握手流程"></a>1.1 三次握手流程</h5><p>1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。<br>2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2020/09/06/protocal/tcpip_param/" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </p></div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/09/algorithm/jps-pathfind/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1794,172 +1960,6 @@
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/20/protocal/tcpip_summary/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content>
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="lifan's blog">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2019/11/20/protocal/tcpip_summary/" class="post-title-link" itemprop="url">TCP/IP学习笔记</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-
-              
-                
-              
-
-              <time title="创建时间：2019-11-20 16:54:06" itemprop="dateCreated datePublished" datetime="2019-11-20T16:54:06+08:00">2019-11-20</time>
-            
-
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/protocal/" itemprop="url" rel="index"><span itemprop="name">protocal</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <p>TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。</p>
-<h4 id="一、名词解释"><a href="#一、名词解释" class="headerlink" title="一、名词解释"></a>一、名词解释</h4><ul>
-<li>MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规定MTU的最大值为1500字节。MTU = IP包头 + TCP包头 + MSS，一般建议MSS&lt;1400字节(1500-IP包头20-TCP包头20-可选项)，如果超过1400字节，就可能产生ip分片。</li>
-<li>MSS（TCP Maximum Segment Size，TCP最大报文段长度)：表示TCP一次性可往另一端发送数据的最大数据长度（不包含包头）。如果单次发送数据超过MSS,且没有设置DF(Dont’t Frament)标志，就会产生IP分片。
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2019/11/20/protocal/tcpip_summary/" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </li></ul></div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2006,7 +2006,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-count">15</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>

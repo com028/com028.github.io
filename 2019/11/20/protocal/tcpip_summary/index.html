@@ -96,12 +96,12 @@
 
 
 
-  <meta name="description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+  <meta name="description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给接收缓冲区，并通知应用层读取。下面简要介绍TCP从建立连接到传输数据的流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元">
 <meta property="og:type" content="article">
 <meta property="og:title" content="TCP&#x2F;IP学习笔记">
 <meta property="og:url" content="http://yoursite.com/2019/11/20/protocal/tcpip_summary/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+<meta property="og:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给接收缓冲区，并通知应用层读取。下面简要介绍TCP从建立连接到传输数据的流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_pack_format.jpg">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/ip_pack_format.jpg">
@@ -113,10 +113,10 @@
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnetion_dump.png">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_status_machine.jpg">
-<meta property="og:updated_time" content="2020-07-11T03:02:46.212Z">
+<meta property="og:updated_time" content="2020-09-08T15:04:08.284Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP学习笔记">
-<meta name="twitter:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规">
+<meta name="twitter:description" content="TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给接收缓冲区，并通知应用层读取。下面简要介绍TCP从建立连接到传输数据的流程。 一、名词解释 MTU(Maximum Transmission Unit，最大传输单元">
 <meta name="twitter:image" content="http://yoursite.com/images/tcpip/tcp_pack_format.jpg">
 
 
@@ -430,7 +430,7 @@
       
 
       
-        <p>TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给应用层。下面介绍TCP从建立连接到传输数据的大致流程。</p>
+        <p>TCP/IP采用分层设计，从下到上分别为物理层、数据链路层、网络层、传输层、应用层。发送数据时，应用层把数据交给传输层，传输层加上自己的包头，再交给网层每层加上自己的包头后，把数据发送到网络中，当数据到达目的后，再一层层的拆包，最终交给接收缓冲区，并通知应用层读取。下面简要介绍TCP从建立连接到传输数据的流程。</p>
 <h4 id="一、名词解释"><a href="#一、名词解释" class="headerlink" title="一、名词解释"></a>一、名词解释</h4><ul>
 <li>MTU(Maximum Transmission Unit，最大传输单元)：在RFC894中规定MTU的最大值为1500字节。MTU = IP包头 + TCP包头 + MSS，一般建议MSS&lt;1400字节(1500-IP包头20-TCP包头20-可选项)，如果超过1400字节，就可能产生ip分片。</li>
 <li>MSS（TCP Maximum Segment Size，TCP最大报文段长度)：表示TCP一次性可往另一端发送数据的最大数据长度（不包含包头）。如果单次发送数据超过MSS,且没有设置DF(Dont’t Frament)标志，就会产生IP分片。<a id="more"></a></li>
@@ -444,7 +444,7 @@
 <li>目的端口号：数据接收方的端口号</li>
 <li>序号(seq)：TCP是可靠的传输协议，会对每个包编号，便于确认和重传。</li>
 <li>确认序号(ack)：收到的序号+1(ack=seq+1),只有ACK标志位为1时，确认序号字段才有效。</li>
-<li>标志位：SYN：发起一个新连接; ACK：确认序号; FIN：释放一个连接; RST：重置连接; </li>
+<li>标志位：SYN：发起一个新连接; ACK：确认序号; FIN：用于四次挥手过程释放一个连接; RST：直接关闭连接，不走四次握手(比如：进程挂了); </li>
 <li>PSH：发送方会立即发出数据，接收方收到这个报会立即文交给应用层。</li>
 <li>16位窗口大小：用于动态反映接收端读缓冲大小。</li>
 <li>数据：应用层数据</li>
@@ -460,16 +460,16 @@
 <h6 id="1-2-握手抓包分析"><a href="#1-2-握手抓包分析" class="headerlink" title="1.2 握手抓包分析"></a>1.2 握手抓包分析</h6><img width="1000" height="800" src="/images/tcpip/tcp_handshake_tcpdump.png">
 
 <ul>
-<li>第1行：客户端向服务器发送SYN，除seq和win以外，options中包含了2个重要内容:</li>
+<li>第1行：客户端向服务器发送SYN，除seq和win以外，options中包含了2个重要内容:mss和wscale</li>
 <li>第2行：服务器向客户端发送ACK，SYN, win, mss, wscale</li>
 <li>第3行：客户端向服务器发送ACK,win。</li>
 <li>注意：序号，win是时时变化的，每个包都要发送，而mss, wscale只会在建立连接时告知对方，建立连接后不会变（当然mss不是绝对不变，这跟每个包经过的路由器的mtu相关）。</li>
 </ul>
-<h4 id="三、传输数据"><a href="#三、传输数据" class="headerlink" title="三、传输数据"></a>三、传输数据</h4><p>连接建立好后，双方就可以正传输数据了，在传输数据过程中会涉及到数据包的分片、重传、流量控制等。</p>
+<h4 id="三、传输数据"><a href="#三、传输数据" class="headerlink" title="三、传输数据"></a>三、传输数据</h4><p>连接建立好后，双方就可以正式传输数据了，在传输数据过程中会涉及到数据包的分片、重传、流量控制等。</p>
 <h5 id="1-1-缓冲区"><a href="#1-1-缓冲区" class="headerlink" title="1.1 缓冲区"></a>1.1 缓冲区</h5><p>每条TCP连接的双端都会有一个发送缓冲区和接收缓冲区，大小可调整(Linux下可以通过 cat /proc/sys/net/ipv4/tcp_wmem 和 cat /proc/sys/net/ipv4/tcp_rmem查看读写缓冲区的大小, setsockopt 函数设置SO_RCVBUF和SO_SNDBUF选项来分别调整SOCKET读缓冲区和写缓冲区的大小)。</p>
 <ul>
-<li>send:当应用层调用send()函数后，会把待发送的数据拷贝到发送缓冲区中，但数据何时发，每次发送的大小，分为多少次发送对应用层来说是透明的。所以send()函数的返回值并不是向网络中发送了多少数据，而是向发送缓冲区拷贝的字节数。</li>
-<li>recv:从缓冲区中收数据,当接收方的传输层收到数据后，会把数据放到接收缓冲区中，并通知OS有数据可读，应用层调用recv()函数从接收缓冲区中拷贝数据到应用层，并没有从网络中收数据。</li>
+<li>send:当应用层调用send()函数后，会把待发送的数据拷贝到发送缓冲区中，但数据何时发，每次发送的大小对应用层来说是透明的。所以send()函数的返回值并不是向网络中发送了多少数据，而是向发送缓冲区拷贝的字节数。</li>
+<li>recv:从缓冲区中收数据,当接收方的传输层收到数据后，会把数据放到接收缓冲区中，内核通知进程可读，进程层调用recv()函数从接收缓冲区中拷贝数据到应用层，所以recv并不是从网络中读取数据。</li>
 <li>当发送缓冲区满：调用send函数就会阻塞，直到缓冲区中有足够的空间能容纳本次send数据</li>
 <li>当接收缓冲区满：接收方的win大小会变为0，发送方传输层停止向接收方发数据，若发送方应用层还在继续发数据，就会把自己的发送缓冲区填满后阻塞。</li>
 </ul>
@@ -613,7 +613,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-count">15</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
