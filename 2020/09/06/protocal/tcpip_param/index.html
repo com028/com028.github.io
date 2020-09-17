@@ -107,7 +107,7 @@
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/traditional_congestion_avoidance.png">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/bbr_inflight.jpg">
-<meta property="og:updated_time" content="2020-09-09T14:31:10.496Z">
+<meta property="og:updated_time" content="2020-09-15T14:13:31.827Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP 调优">
 <meta name="twitter:description" content="TCP/IP相关的基础知识、术语已经在之前的文章中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。 一、三次握手  1.1 三次握手流程1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。">
@@ -425,7 +425,7 @@
 
       
         <p>TCP/IP相关的基础知识、术语已经在之前的<a href="https://lifan.tech/2019/11/20/protocal/tcpip_summary/" target="_blank" rel="noopener">文章</a>中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。</p>
-<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="400" height="160" src="/images/tcpip/tcp_handshake.jpg">
+<h4 id="一、三次握手"><a href="#一、三次握手" class="headerlink" title="一、三次握手"></a>一、三次握手</h4><img width="450" height="180" src="/images/tcpip/tcp_handshake.jpg">
 
 <h5 id="1-1-三次握手流程"><a href="#1-1-三次握手流程" class="headerlink" title="1.1 三次握手流程"></a>1.1 三次握手流程</h5><p>1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。<br>2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。<a id="more"></a><br>3）客户端收到SYN+ACK后，回复ACK，进入ESTABLISHD状态。<br>4）服务器收到ACK后，把连接从半连接队列移到accept队列中，进入ESTABLISHD状态。</p>
 <h5 id="1-2-三次握手参数"><a href="#1-2-三次握手参数" class="headerlink" title="1.2 三次握手参数"></a>1.2 三次握手参数</h5><h6 id="1-1-半连接队列"><a href="#1-1-半连接队列" class="headerlink" title="1.1 半连接队列"></a>1.1 半连接队列</h6><p>在step2时若服务器半连接队列已经满，则请求建立新连接的SYN会被丢弃。可通过如下方式查看。</p>
@@ -434,7 +434,7 @@
 <p>可以通过内核参数调大半连接队列大小</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_max_syn_backlog = 1024 #半连接队列大小（累计值）</span><br></pre></td></tr></table></figure>
 
-<p>如果想在半连接队列已满的情况下继续建立连接可通过开启syncookies实现，syncookies的原理是在服务器发送SYN+ACK时生成一个验证码，客户端回复ACK时再验证，如果验证通过则连接成功。正常情况下半连接队列是不会满的，为了预防SYN泛洪攻击，可以把synccookies改为半连接队列满后再启动。</p>
+<p>如果想在半连接队列已满的情况下继续建立连接可通过开启syncookies实现，syncookies的原理是服务器收到syn时不使用半连接队列，在服务器发送SYN+ACK时生成一个验证码，客户端回复ACK时再验证，如果验证通过则连接成功。正常情况下半连接队列是不会满的，为了预防SYN泛洪攻击，可以把synccookies改为半连接队列满后再启动。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_syncookies = 1 #0关闭，1半连接队列满后启用，2无条件启用</span><br></pre></td></tr></table></figure>
 
 <h6 id="1-2-重发SYN-ACK"><a href="#1-2-重发SYN-ACK" class="headerlink" title="1.2 重发SYN+ACK"></a>1.2 重发SYN+ACK</h6><p>若服务器发送SYN+ACK后一段时间内没收到ACK则会重发SYN+ACK，我们可以根据情况设置重发次数</p>
@@ -498,7 +498,7 @@
 <p>配置OS当前使用的拥塞控制算法</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_congestion_control = bbr</span><br></pre></td></tr></table></figure>
 
-<h5 id="1-3-传统网络拥塞算法"><a href="#1-3-传统网络拥塞算法" class="headerlink" title="1.3 传统网络拥塞算法"></a>1.3 传统网络拥塞算法</h5><p>传统的拥塞控制算法cubic、reno主要是通过丢包来判断网络是否出现了拥塞，链路中的每个路由器都有自己的缓存，当BDP使用完后，后续的包就会进入路由器的缓存，此时网络开始出现卡顿，RTT开始明显上升，当缓存用完后，后续的包就会被丢弃，传统的拥塞控制算法检查到丢包就会启动拥塞控制，但此时网络已经出现了严重的拥塞。<br>(可能由于历史原因以前的路由器缓存比较小，当出现丢包时，启动拥塞并没有明显的问题；但现在路由器的缓存越来越大，丢包时再启动拥塞控制可能会带来很大的时延。)下图描述了慢启动、拥塞控制的整个过程。<br><img width="700" height="200" src="/images/tcpip/traditional_congestion_avoidance.png"><br>1）慢启动时每收到一个ACK，cwnd+1，直到cwnd达到慢启动门限ssthresh，此时cwnd退出指数变为线性增长每经过一个RTT，cwnd+1。<br>2）当丢包发生后，ssthresh降为原来的一半，cwnd重置为1。（丢包分两种情况：1.重复ACK，若收到重复ACK 3次则ssthresh和cwnd降为原来的一半（有丢包现象，但情况不严重）； 2.包出现RTO则说明网络已经很糟糕了，cwnd直接降为1，ssthresh降为原来一半。）<br>3）当cwnd &lt; ssthresh时，继续慢启动流程。<br>4）重复1 ~ 3直到数据发送完毕。</p>
+<h5 id="1-3-传统网络拥塞算法"><a href="#1-3-传统网络拥塞算法" class="headerlink" title="1.3 传统网络拥塞算法"></a>1.3 传统网络拥塞算法</h5><p>传统的拥塞控制算法cubic、reno主要是通过丢包来判断网络是否出现了拥塞，链路中的每个路由器都有自己的缓存，当BDP使用完后，后续的包就会进入路由器的缓存，此时网络开始出现卡顿，RTT开始明显上升，当缓存用完后，后续的包就会被丢弃，传统的拥塞控制算法检查到丢包就会启动拥塞控制，但此时网络已经出现了严重的拥塞。<br>(可能由于历史原因以前的路由器缓存比较小，当出现丢包时，启动拥塞并没有明显的问题；但现在路由器的缓存越来越大，丢包时再启动拥塞控制可能会带来很大的时延。)下图描述了慢启动、拥塞控制的整个过程。<br><img width="700" height="200" src="/images/tcpip/traditional_congestion_avoidance.png"><br>1）慢启动时每收到一个ACK，cwnd+1，直到cwnd达到慢启动门限ssthresh，此时cwnd退出指数变为线性增长每经过一个RTT，cwnd+1。<br>2）当丢包发生后，ssthresh降为原来的一半，cwnd重置为1。（丢包分两种情况：1.重复ACK，若收到重复ACK 3次则ssthresh和cwnd降为cwnd的一半（有丢包现象，但情况不严重）； 2.包出现RTO则说明网络已经很糟糕了，cwnd直接降为初始值，ssthresh降为原来一半。）<br>3）当cwnd &lt; ssthresh时，继续慢启动流程。<br>4）重复1 ~ 3直到数据发送完毕。</p>
 <h5 id="1-4-基于测量的网络拥塞算法"><a href="#1-4-基于测量的网络拥塞算法" class="headerlink" title="1.4 基于测量的网络拥塞算法"></a>1.4 基于测量的网络拥塞算法</h5><p>传统的拥塞控制算法缺点在于：发生丢包时才启动拥塞控制，此时路由器缓存已被耗尽，网络变得非常拥堵。BBR算法是基于测量的网络拥塞算法代表，它主要通过物理链路时延最小值（TRprop）和瓶颈带宽最大值（BtlBw）来确定网络是否拥塞。<br><strong>TPprop：</strong>RTT由包在链路中传输的物理时间、路由器缓存排队时间、ACK延迟确认时间组成。我们只需要测得在不使用缓存情况下RTT的最小值即TPprop。<br><strong>BtlBw：</strong>当发送方收到一个ACK时，可以计算出该包的RTT和这段时间内飞行中的报文字节数。speed_rate = delta_delivered/delta_t, BtlBw = max(speed_rate)。<br>BDP: TPprop * BtlBw，当飞行中的报文大于BDP时，开始使用路由器缓存。此时即拥塞控制的最佳点，下图中第一条竖线的位置。<br><img width="500" height="200" src="/images/tcpip/bbr_inflight.jpg"></p>
 <p>由于测量RTprop需要保证此时未使用路由器缓存，而测量BtlBw的方法是在RTT不变的情况下增加发送数据量直至RTT增长，此时会占用一些路由器缓存。所以TRprop和BtlBw不能同时测得，由于网络状况是时时变化的。BBR会定时交替测试最新的TRprop和BtlBw。</p>
 
