@@ -107,7 +107,7 @@
 <meta property="og:image" content="http://yoursite.com/images/tcpip/tcp_disconnection.jpg">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/traditional_congestion_avoidance.png">
 <meta property="og:image" content="http://yoursite.com/images/tcpip/bbr_inflight.jpg">
-<meta property="og:updated_time" content="2020-09-15T14:13:31.827Z">
+<meta property="og:updated_time" content="2020-09-20T03:22:21.523Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="TCP&#x2F;IP 调优">
 <meta name="twitter:description" content="TCP/IP相关的基础知识、术语已经在之前的文章中介绍过了。这里主要介绍三次握手、四次挥手、缓冲区、拥塞控制中各种状态的意义以及相关内核参数的配置。 一、三次握手  1.1 三次握手流程1）当客户端调用connect函数后，内核会向服务器发送SYN+序号，并进入SYN_SEND状态。2）服务器内核收到SYN消息后，会建立一条连接并放入半连接队列，回复SYN+ACK，进入SYN_RCVD。">
@@ -453,7 +453,7 @@
 <h6 id="1-4-TFO"><a href="#1-4-TFO" class="headerlink" title="1.4 TFO"></a>1.4 TFO</h6><p>通常情况下，我们需要在三次握手结束后才能发送数据。但开启TFO使得我们可以在第1次握手时就能发送数据，TFO是这样实现的：第一次建立连接时走正常的TCP三次握手流程，服务器会把客户端ip地址加密作为Cookie携带在SYN+ACK包中发给客户端。下次客户端再连接服务器时，就可以在第1次握手时发送数据了，但第1次握手只能使用sendto或sendmsg（因为send必须在连接建立后才能使用）。服务器收到sendto后会验证Cookie若通过，除了通知用户进程外还会向客户端发送SYN+ACK，虽然客户端会回复ACK但服务器丢弃它。若要开启此功能需要客户端和服务器同时支持，配置如下：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_fastopen = 3 #按比特位控制，第1位为1表示作为客户端时支持，第2位为1表示作为服务器时支持，第1、2位同时为1表示作为客户端和服务器时都支持</span><br></pre></td></tr></table></figure>
 
-<h4 id="二、四次挥手"><a href="#二、四次挥手" class="headerlink" title="二、四次挥手"></a>二、四次挥手</h4><p>断开连接的方式大概分为2种：直接发送RST标志位和四次挥手。正常情况下内核会通过四次挥手来关闭连接，非正常情况（比如：进程挂掉，对方端口不能访问）内核会通过发送RST标志位来关闭连接，但通过RST关闭连接不是绝对安全的(假如：进程A和进程B建立了连接，进程A突然挂了，此时内核会向进程B发送RST，如果RST在网络中出现了延迟，A已经完成了重启并和B重新建立了连接，此时RST到达B，B会意外关闭连接)<br><img width="450" height="180" src="/images/tcpip/tcp_disconnection.jpg"></p>
+<h4 id="二、四次挥手"><a href="#二、四次挥手" class="headerlink" title="二、四次挥手"></a>二、四次挥手</h4><p>断开连接的方式大概分为2种：直接发送RST标志位和四次挥手。正常情况下内核会通过四次挥手来关闭连接，非正常情况（比如：进程挂掉，对方端口不能访问）内核会通过发送RST标志位来关闭连接，但通过RST关闭连接不是绝对安全的(假如：进程A和进程B建立了连接，进程A突然挂了，此时进程B向进程A发送数据，内核会向进程B发送RST，如果RST在网络中出现了延迟，A已经完成了重启并和B重新建立了连接，此时RST到达B，B会意外关闭连接)<br><img width="450" height="180" src="/images/tcpip/tcp_disconnection.jpg"></p>
 <h5 id="1-1-四次挥手的流程"><a href="#1-1-四次挥手的流程" class="headerlink" title="1.1 四次挥手的流程"></a>1.1 四次挥手的流程</h5><p>1）主动方调用close或shutdown后，内核向被动关闭方发送标志位FIN和序号。主动关闭方状态切换为FIN-WAIT1，并进入半关闭状态。若通过close关闭的连接，则当前连接变成孤儿连接，内核会丢弃被动关闭方发来的数据，主动关闭方通过netstat -p查看时进程名为空。<br>2）被动方收到FIN+序号，回复ACK、序号+1，被动关闭方状态切换为CLOSE_WAIT。如果主动关闭方是通过shutdown关闭连接，被动关闭方在CLOSE_WAIT状态下允许向主动关闭方继续发送消息；若主动关闭方通过close关闭的连接，则不会向主关闭方发送数据。<br>3) 主动关闭方收到ACK、序号+1，状态切换为FIN_WAIT2，如果step1是调用shutdown此时主动关闭方的发送通道正式关闭。<br>4）被动关闭方发送FIN和序号，状态切换为LAST_ACK。<br>5）主动关闭方收到FIN和序号，并回复ACK、序号+1，状态切换为WAIT_TIME。主动关闭方会在WAIT_TIME状态下等待2MSL(Linux下为60s，等待2MSL的原因在之前的文章中已经说过)后进入CLOSED状态。<br>6）被动关闭方收到ACK，进入CLOSED状态。</p>
 <h5 id="1-2-四次挥手参数"><a href="#1-2-四次挥手参数" class="headerlink" title="1.2 四次挥手参数"></a>1.2 四次挥手参数</h5><h6 id="1-1-重发FIN"><a href="#1-1-重发FIN" class="headerlink" title="1.1 重发FIN"></a>1.1 重发FIN</h6><p>挥手流程step1发送FIN一段时间后，没收到ACK时会重发FIN消息，重发次数为：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_orphan_retries = 0 #0为默认值，表示重新发8次，达到最大重发次数后，依然没收到ACK则会直接关闭连接</span><br></pre></td></tr></table></figure>
@@ -531,7 +531,7 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/08/09/algorithm/jps-pathfind/" rel="next" title="JPS寻路算法">
+              <a href="/2020/08/09/algorithm/pathfind/jps-pathfind/" rel="next" title="JPS寻路算法">
                 <i class="fa fa-chevron-left"></i> JPS寻路算法
               </a>
             

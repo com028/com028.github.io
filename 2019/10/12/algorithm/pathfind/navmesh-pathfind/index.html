@@ -96,12 +96,12 @@
 
 
 
-  <meta name="description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点tp(x,y)，设p1，p2所在的向量为v1， p1tp所在的向量为v2。则可以通过v1 x v2来判断点tp与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与">
+  <meta name="description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点t(x,y)，设p1，p2所在的向量为v1， p1t所在的向量为v2。则可以通过v1 x v2来判断点t与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与v1平">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Mesh寻路">
 <meta property="og:url" content="http://yoursite.com/2019/10/12/algorithm/pathfind/navmesh-pathfind/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点tp(x,y)，设p1，p2所在的向量为v1， p1tp所在的向量为v2。则可以通过v1 x v2来判断点tp与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与">
+<meta property="og:description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点t(x,y)，设p1，p2所在的向量为v1， p1t所在的向量为v2。则可以通过v1 x v2来判断点t与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与v1平">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/navmesh/point_line_relations.png">
 <meta property="og:image" content="http://yoursite.com/images/navmesh/two_lines.png">
@@ -109,10 +109,10 @@
 <meta property="og:image" content="http://yoursite.com/images/navmesh/infection_point.png">
 <meta property="og:image" content="http://yoursite.com/images/navmesh/final_path.jpg">
 <meta property="og:image" content="http://yoursite.com/images/navmesh/finding_path_demo.png">
-<meta property="og:updated_time" content="2020-08-07T13:35:11.964Z">
+<meta property="og:updated_time" content="2020-10-08T03:06:41.848Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Mesh寻路">
-<meta name="twitter:description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点tp(x,y)，设p1，p2所在的向量为v1， p1tp所在的向量为v2。则可以通过v1 x v2来判断点tp与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与">
+<meta name="twitter:description" content="一、几何知识1.1 判断点与直线的关系 向量叉乘已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点t(x,y)，设p1，p2所在的向量为v1， p1t所在的向量为v2。则可以通过v1 x v2来判断点t与直线p1、p2的关系。当：v1 x v2 &amp;gt; 0 ：v2在v1逆时针方向（左侧）v1 x v2 &amp;lt; 0 ：v2在v1顺时针方向（右侧）v1 x v2 = 0 ：v2与v1平">
 <meta name="twitter:image" content="http://yoursite.com/images/navmesh/point_line_relations.png">
 
 
@@ -427,14 +427,14 @@
 
       
         <h4 id="一、几何知识"><a href="#一、几何知识" class="headerlink" title="一、几何知识"></a>一、几何知识</h4><h5 id="1-1-判断点与直线的关系"><a href="#1-1-判断点与直线的关系" class="headerlink" title="1.1 判断点与直线的关系"></a>1.1 判断点与直线的关系</h5><ul>
-<li><p>向量叉乘<br>已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点tp(x,y)，设p1，p2所在的向量为v1， p1tp所在的向量为v2。则可以通过v1 x v2来判断点tp与直线p1、p2的关系。当：<br>v1 x v2 &gt; 0 ：v2在v1逆时针方向（左侧）<br>v1 x v2 &lt; 0 ：v2在v1顺时针方向（右侧）<br>v1 x v2 = 0 ：v2与v1平行（起点相同，不可能平行，只能共线）</p>
+<li><p>向量叉乘<br>已知直线上两点p1(x1,y1)， p2(x2,y2)，测试点t(x,y)，设p1，p2所在的向量为v1， p1t所在的向量为v2。则可以通过v1 x v2来判断点t与直线p1、p2的关系。当：<br>v1 x v2 &gt; 0 ：v2在v1逆时针方向（左侧）<br>v1 x v2 &lt; 0 ：v2在v1顺时针方向（右侧）<br>v1 x v2 = 0 ：v2与v1平行（由于起点相同，v1、v2共线）</p>
 </li>
-<li><p>解直线方程<br>已知直线上的两点p1(x1,y1) p2(x2,y2)， p1 p2两点不重合。则直线的一般式方程AX+BY+C=0，结合两点式可得出，其中A B C分别为：<a id="more"></a><br>A = y2-y1;<br>B = x1-x2;<br>C = x2 * y1-x1 * y2<br>把测试点tp(x, y)代入直线方程得：<br>D = Ax + By + C<br>若 D &gt; 0 则tp在直线右侧<br>若 D &lt; 0 则tp在直线左侧<br>若 D = 0 则tp在直线上<br><a href="https://blog.csdn.net/u010429424/article/details/44829325" target="_blank" rel="noopener">参考1</a><br><a href="https://zhuanlan.zhihu.com/p/26263309" target="_blank" rel="noopener">参考2</a></p>
+<li><p>解直线方程<br>已知直线上的两点p1(x1,y1) p2(x2,y2)， p1 p2两点不重合。则直线的一般式方程AX+BY+C=0，结合两点式可得出，其中A B C分别为：<a id="more"></a><br>A = y2-y1;<br>B = x1-x2;<br>C = x2 * y1-x1 * y2<br>把测试点t(x, y)代入直线方程得：<br>D = Ax + By + C<br>若 D &gt; 0 则t在直线右侧<br>若 D &lt; 0 则t在直线左侧<br>若 D = 0 则t在直线上<br><a href="https://blog.csdn.net/u010429424/article/details/44829325" target="_blank" rel="noopener">参考1</a><br><a href="https://zhuanlan.zhihu.com/p/26263309" target="_blank" rel="noopener">参考2</a></p>
 <img width="400" height="200" src="/images/navmesh/point_line_relations.png">
 
 </li>
 </ul>
-<h5 id="1-2-两条直线的交点"><a href="#1-2-两条直线的交点" class="headerlink" title="1.2 两条直线的交点"></a>1.2 两条直线的交点</h5><p>求两条直线的交点方式很多，比如：解联立方程、投影法、面积法、解参数方程。这里介绍参数方程求两条直线的交点，参数方程需要求两条线段向量的叉乘，而我们可以通过叉乘预先排除两条直线平行的情况。<br>假线段L1的两个端点为s1, e1; L2的两个端点为s2, e2,则向量L1，L2可表示为：<br>V1 = e1 - s1<br>V2 = e2 - s2<br>参数方程可表示为：<br>L1 = s1 + t V1<br>L2 = s2 + u V2<br>若两条直线相交，则：<br>s1 + t V1 = s2 + u V2<br>两边同时叉乘法 V2得：<br>s1 x V2 + t V1 x V2 = s2 x V2 + u V2 x V2<br>根据叉乘的几何意义,可知:V2 x V2 = 0<br>t = (s2 - s1) x V2 / (V1 x V2)<br>同理可得<br>u = (s1  - s2) x V1 / (V2 x V1)<br>因为 P x Q = - (Q x P) 所以<br>u = V1 x (s1  - s2) / (V1 x V2) (转换的目的是为了算法效率，V1xV2一般在预判断两直线是否相交时，就会计算)<br>当 0 &lt;= t &lt;= 1，且 0 &lt;= u &lt;= 1时，两线段相交<br>把t或u代入参数方程中即可得到交点<br>s1 + t V1<br> <a href="https://www.cnblogs.com/xpvincent/p/5208994.html" target="_blank" rel="noopener">参考1</a><br> <a href="https://blog.csdn.net/wcl0617/article/details/78654944" target="_blank" rel="noopener">参考2</a><br><img width="400" height="200" src="/images/navmesh/two_lines.png"></p>
+<h5 id="1-2-两条直线的交点"><a href="#1-2-两条直线的交点" class="headerlink" title="1.2 两条直线的交点"></a>1.2 两条直线的交点</h5><p>求两条直线的交点方式很多，比如：解联立方程、投影法、面积法、解参数方程。这里介绍参数方程求两条直线的交点，参数方程需要求两条线段向量的叉乘，而我们可以通过叉乘预先排除两条直线平行的情况。<br>假线段L1的两个端点为s1, e1; L2的两个端点为s2, e2,则向量L1，L2可表示为：<br>V1 = e1 - s1<br>V2 = e2 - s2<br>参数方程可表示为：<br>x = s1 + t V1<br>y = s2 + u V2<br>若两条直线相交，则：<br>s1 + t V1 = s2 + u V2<br>两边同时叉乘法 V2得：<br>s1 x V2 + t V1 x V2 = s2 x V2 + u V2 x V2<br>根据叉乘的几何意义,可知:V2 x V2 = 0<br>t = (s2 - s1) x V2 / (V1 x V2)<br>同理可得<br>u = (s1  - s2) x V1 / (V2 x V1)<br>因为 P x Q = - (Q x P) 所以<br>u = V1 x (s1  - s2) / (V1 x V2) (转换的目的是为了算法效率，V1xV2一般在预判断两直线是否相交时，就会计算)<br>当 0 &lt;= t &lt;= 1，且 0 &lt;= u &lt;= 1时，两线段相交<br>把t、u分别代入参数方程中即可得到交点<br>s1 + t V1<br> <a href="https://www.cnblogs.com/xpvincent/p/5208994.html" target="_blank" rel="noopener">参考1</a><br> <a href="https://blog.csdn.net/wcl0617/article/details/78654944" target="_blank" rel="noopener">参考2</a><br><img width="400" height="200" src="/images/navmesh/two_lines.png"></p>
 <h5 id="1-3-三角形的外接圆"><a href="#1-3-三角形的外接圆" class="headerlink" title="1.3 三角形的外接圆"></a>1.3 三角形的外接圆</h5><p>三角形外接圆的圆心(外心)为三条边垂直平分线的交点，已知三角形的三个顶点坐标，求三角形外心可以通过下面2种方法求得：<br>1.点法式解连立方程：已知两点可求出方向向量和法向量，根据两点的中点和法向量可用点法式表示出直线A，再取另外两点计算法向量和中点代入点法式可得直线B，直线A、B角连立方程可得交点（圆心），圆心到三角形任意一点的距离即半径。<br>2.圆心到三个顶点距离等于半径：设点C(x,y)为圆心，CA、CB、CC的距离为半径，解方程可得圆心。<br> <a href="https://blog.csdn.net/lijiayu2015/article/details/52541730" target="_blank" rel="noopener">参考</a></p>
 <h4 id="二、-根据点集生成三角形"><a href="#二、-根据点集生成三角形" class="headerlink" title="二、 根据点集生成三角形"></a>二、 根据点集生成三角形</h4><p>本文讨论基于三角形的navmesh寻路，在地图编辑器中，各种态静态阻挡可以通过点线构成，在地图器中编辑完静态阻挡后，需要把可行走区域三角形化，以便于寻路。Delaunay三角剖分能够构造出一张良好三角形网，网中的三角形具有如下特性：</p>
 <ul>
@@ -458,8 +458,8 @@
 </ul>
 <p>具体方法如下：</p>
 <ol>
-<li>判断下条穿出边的端点b1(这里b1即b)否在vLeft与vRight之间，若在则更新vLeft(A,b)为vLeft(A, b1), 否则不更新。</li>
-<li>判断下条穿出边的端点a1否在vLeft与vRight之间，若在则更新vRight(A,a)为vRight(A, a1), 否则不更新。</li>
+<li>判断下一条穿出边的端点b1(这里b1即b)否在vLeft与vRight之间，若在则更新vLeft(A,b)为vLeft(A, b1), 否则不更新。</li>
+<li>判断下一条穿出边的端点a1否在vLeft与vRight之间，若在则更新vRight(A,a)为vRight(A, a1), 否则不更新。</li>
 <li>只要任意一点更新，则会继续判断下一条边。</li>
 <li>若下一穿出边的2个端点都不在vLeft(An, bn)和vRight(An, an)之间，若在vLeft(An,bn)左侧，则bn为拐点；若在vRight(An, an)右侧，则an为拐点。</li>
 <li>重复1 ~ 4直到最后一条穿出边。<img width="400" height="200" src="/images/navmesh/final_path.jpg">
@@ -508,8 +508,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/10/30/golang/high-performance-timer/" rel="prev" title="Golang Timer 源码探索及常见问题">
-                Golang Timer 源码探索及常见问题 <i class="fa fa-chevron-right"></i>
+              <a href="/2019/10/30/golang/slice/" rel="prev" title="Golang Slice 源码分析">
+                Golang Slice 源码分析 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>

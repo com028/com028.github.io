@@ -103,7 +103,7 @@
 <meta property="og:site_name" content="lifan&#39;s blog">
 <meta property="og:description" content="最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。 问题描述服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-07-11T08:55:03.650Z">
+<meta property="og:updated_time" content="2020-10-08T03:15:05.840Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Golang内存分配">
 <meta name="twitter:description" content="最近项目做上线前的压力测试，遇到一个”诡异”的问题，GameServer进程持有内存，即使在所有机器人下线后一段时间，内存依然没有归还OS。 问题描述服务器启动后，内存占用大概600M，此时机器人开始陆续上线，服务器的内存使用逐渐增加，最高达到11GB。 大概持续1个小时后，机器人开始陆续下线，机器人全部下线后GameServer进程的RSS竟丝毫没有下降。当时有些困惑，Golang GC最迟2分">
@@ -439,10 +439,10 @@
 <li>Linux上调此函数时，无效。 根据官方的解释，在<code>golang1.12</code>中,Linux内核版本&gt;4.5采用的是MADV_FREE方式来释放内存,当OS有内存压力时，才会把多余内存归还给OS。即使调用 <code>FreeOSMemory()</code>也不会生效。<a href="https://github.com/golang/go/issues/28466" target="_blank" rel="noopener">原文</a><br>解决：Linux平台可以给进程设置环境变量,禁用MADV_FREE。 <code>GODEBUG=madvdontneed=1 ./GameServer</code></li>
 </ol>
 <p>之前一直有误解，被GC的内存直接归还OS。但事实并非如此，Golang的内存分配器会一直持有GC的内存，直到OS有内存压力或调用<code>debug.FreeOSMemory()</code>手动归还。</p>
-<p>为了弄清楚这一问题，我重新看了一遍Golang内存分配流程，并记录下来方便以后复习。</p>
+<p>为了弄清楚这一问题，我看了一遍Golang内存分配流程。</p>
 <h2 id="一、概念及名词解释"><a href="#一、概念及名词解释" class="headerlink" title="一、概念及名词解释"></a>一、概念及名词解释</h2><ul>
 <li>页(Page)：进程中的地址都是虚拟地址，地址总线指向的物理地址才是真实地址，页的作用就是为了实现虚拟地址和物理地址的转换，页大小默认为4KB。<a href="https://blog.csdn.net/qq_38410730/article/details/81036768" target="_blank" rel="noopener">详情参考</a></li>
-<li>伪共享(false sharing)：现代多核CPU的缓存一般分为三级,每个核上都一、二级缓存，而第三级缓存则是多个核之间共享。当Core从内存取数据时，一次性会取CacheLine大小的数据到自己的缓存中，然后存进CacheLine。但如果Core1、Core2同时读取了变量A或者它们CacheLine有交集，假如Core1先修改，则Core2的CacheLine会失效(CacheMiss)，只有在Core1数据写回内存后，Core2重新读取, 这种情况造成了本来应该是并行的操作变成线性。这种情况在多核高并发的场景下影响很大。Golang内存分配器为了规避这种情况，在central上通过pad来填充不够CacheLineSize的部分，避免CacheMiss以提高多核并发时的性能。</li>
+<li>伪共享(false sharing)：现代多核CPU的缓存一般分为三级,每个核上都一、二级缓存，而第三级缓存则是多个核之间共享。当Core从内存取数据时，一次性会取CacheLine大小的数据到自己的缓存中，然后存进CacheLine。但如果Core1、Core2同时读取了变量A或者它们CacheLine有交集，假如Core1先修改，则Core2的CacheLine会失效(CacheMiss)，只有在Core1数据写回内存后，Core2重新读取, 这样造成了本来应该是并行的操作变成线性。这种情况在多核高并发的场景下影响很大。Golang内存分配器为了规避这种情况，在central上通过pad来填充不够CacheLineSize的部分，避免CacheMiss以提高多核并发时的性能。</li>
 <li>RSS(Resident Set Size)：常驻内存大小,当前进程已经分配的内存大小。用top命令可以看到RSS(RES)。</li>
 <li>MADV_FREE：当应用程序不需要addr,len区间的页时,内核只会在OS内存有压力时释放。在此之前，这些页只是被标记为待释放的，当这些页即将被写时才会触发释放。<a href="http://man7.org/linux/man-pages/man2/madvise.2.html" target="_blank" rel="noopener">原文</a></li>
 <li>Span： Golang内存管理的基本单位，一个sapn包含一个或多个页。</li>
@@ -456,7 +456,7 @@
 <li>小对象：对象大小&lt;16KB, 之所以是16KB是在浪费空间和可合并性之间做的权衡, 当然大小是可调整的,小对象在class为2的span(noscan)上分配。</li>
 <li>普通对象：对象大小&lt;=32KB, 在class1~class66的sapn上分配。</li>
 <li>大对象：对象大小&gt;32KB, 分配时会跳过mcache、mcentral直接在mheap上分配, 所对应的class值为0</li>
-<li>mcache：每个P都有一个mcache, 当分配&lt;=32KB的小对象时,首先在当前P的mcache中分配,因为P中任意时刻只有1个goroutin在执行,所以mcache中分配对象不需要加锁</li>
+<li>mcache：每个P都有一个mcache, 当分配&lt;=32KB的小对象时,首先在当前P的mcache中分配,因为P中任意时刻只有1个goroutine在执行,所以mcache中分配对象不需要加锁</li>
 </ul>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> mcache <span class="keyword">struct</span> &#123;</span><br><span class="line">    alloc [numSpanClasses]*mspan <span class="comment">//可分配的sapn, 根据待分配对象大小,计算出alloc的索引，在对应span中找到空闲obj</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 

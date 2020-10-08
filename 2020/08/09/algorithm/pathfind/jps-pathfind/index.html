@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。 一、概念JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JPS寻路算法">
+<meta property="og:url" content="http://yoursite.com/2020/08/09/algorithm/pathfind/jps-pathfind/index.html">
+<meta property="og:site_name" content="lifan&#39;s blog">
+<meta property="og:description" content="JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。 一、概念JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/images/jps/straight_line_jmp1.png">
+<meta property="og:image" content="http://yoursite.com/images/jps/diagonally_jmp.png">
+<meta property="og:image" content="http://yoursite.com/images/jps/normal_example.png">
+<meta property="og:image" content="http://yoursite.com/images/jps/area_unreachable.png">
+<meta property="og:image" content="http://yoursite.com/images/jps/prune.png">
+<meta property="og:image" content="http://yoursite.com/images/jps/opti_path.png">
+<meta property="og:updated_time" content="2020-09-02T13:53:49.260Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JPS寻路算法">
+<meta name="twitter:description" content="JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。 一、概念JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。">
+<meta name="twitter:image" content="http://yoursite.com/images/jps/straight_line_jmp1.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yoursite.com/2020/08/09/algorithm/pathfind/jps-pathfind/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>JPS寻路算法 | lifan's blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lifan's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-categories" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/09/algorithm/pathfind/jps-pathfind/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content>
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lifan's blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JPS寻路算法
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-08-09 22:01:46" itemprop="dateCreated datePublished" datetime="2020-08-09T22:01:46+08:00">2020-08-09</time>
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/algorithm/" itemprop="url" rel="index"><span itemprop="name">algorithm</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>JPS算法本质上是对A* 算法的优化，在大部分情况下比传统A* 算法快上百倍。通过性能统计可以现，A* 算法大量时间都花在操作openset和closedset上，其原因就是加入openset的节点太多。JPS只会把关键的节点（跳点）加入openset中，从而大大减少了维护最小堆的开销。</p>
+<h4 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h4><p>JPS在传统A* 算法基础上提出了强迫邻居和跳点的概念，这是减少openset中格子数量的关键。<a id="more"></a></p>
+<h5 id="1-1-强迫邻居"><a href="#1-1-强迫邻居" class="headerlink" title="1.1 强迫邻居"></a>1.1 强迫邻居</h5><ul>
+<li><p>直线方向搜索：直线方向搜索存在两种方案，忽略对角线阻档和不忽略对角线阻档，根据实际需求选择一种。<br>忽略阻档：当前格子的左邻居为阻档且左前邻居为非阻档，则左前邻居为强迫邻居（紫色格子），当前节点为跳点（绿色格子）；同理若理当前格子的右邻居为阻档，右前邻居为非阻档，则右前邻居为强迫邻居，当前节点为跳点。如下图所示</p>
+<img width="200" height="100" src="/images/jps/straight_line_jmp1.png">
+
+<p>  不忽略阻档：当前格子左邻居为非阻档且左后方为阻档，则左邻居为强迫邻居，当前节点为跳点；同理若当前格子右邻居为非阻档，右后方为阻档，则右方邻居为强迫邻居，当前节点为跳点。(上图中X为跳点)</p>
+</li>
+<li><p>对角线方向搜索：<br>当前格子左邻居为阻档且左上方为非阻档，则左上方格子为强迫邻居（紫色格子），当前格子为跳点（绿色格子）；同理当前格子下方为阻档，右下方为非阻档，则右下方格子为强迫邻居，当前格子为跳点。如下所示</p>
+<img width="200" height="100" src="/images/jps/diagonally_jmp.png">
+
+</li>
+</ul>
+<h5 id="1-2-跳点"><a href="#1-2-跳点" class="headerlink" title="1.2 跳点"></a>1.2 跳点</h5><ul>
+<li>如果parent(x)到x是沿对角线移动，x可以通过水平或垂直方向移动到跳点j，则x也是跳点。（如果遇到此情况，应该把x加入openset, j暂时不加入。因为如果f(j) &lt; f(x)的话，下次从openset取出f值最小的格子可能是j，而从parent(x)不一定能直接移动f(j)，必须先走到x）</li>
+<li>如果节点x有强迫邻居，则x节点为跳点。</li>
+<li>起点、终点都是跳点。</li>
+</ul>
+<h4 id="二、算法流程"><a href="#二、算法流程" class="headerlink" title="二、算法流程"></a>二、算法流程</h4><ol>
+<li>首先把起点加入到openset。</li>
+<li>从openset中取出F值最小的点作为当前节点并加入closedset，从当前节点开始沿直线（水平或垂直）方向搜索跳点，若找到跳点则停止该方向的搜索并把跳点加入到openset中，否则直到遇到地图边界或阻档停止当前方向的搜索。</li>
+<li>从当前节点开始往对角线方向搜索跳点，对角线方向到达一个新格子后，优先搜索该格子的水平分量方向，找到跳点则加入openset, 遇到边界或阻档停止当前方向搜索；再搜索垂直分量。对角线方向的搜索直到遇到跳点、边界、阻档停止。</li>
+<li>如果当前格子的（8个方向）水平、垂直、对角线方向都搜索完毕，则本轮搜索结束。</li>
+<li>重复步骤2、3、4直到找到终点。</li>
+</ol>
+<h4 id="三、寻路实例"><a href="#三、寻路实例" class="headerlink" title="三、寻路实例"></a>三、寻路实例</h4><p>下面通过一个例子来看下JPS算法寻路的整个过程，在图中，绿色格子为起点，红色格子为终点，灰色格子为路径上的跳点，紫色为加入openset，但没有成为路径点的跳点。<br><img width="400" height="200" src="/images/jps/normal_example.png"></p>
+<ol>
+<li>把起点加入openset，从openset中取出F值最小的格子，从openset中删除，加入closedset中。因为是起点没有方向，所以从当前格子8个方向寻找跳点(根据规则，直线和对角线方向都可搜索时，优先搜索直线方向)。</li>
+<li>直线方向搜索时右边、顶部都遇到阻档，底部遇到边界，本次停止这3个方向的搜索。</li>
+<li>开始对角线方向搜索，在右下对角线方向所有格子及其分量上遇到跳点(格子5)，加入到openset，并停止该方向的搜索。</li>
+<li>向右上对角线搜索时，在格子1处水平方分量搜索时，遇到格子2为跳点（根据规则：右邻居为阻档，右上为非阻档），因为起点到格子1为对角线方向，根据跳点规则1，格子1也是跳点。</li>
+<li>把格子1加入到openset，此时，本轮搜索完成。现在openset中有2个跳点，格子5和格子1，从中取出F值最小的格子1，以格子1为当前格子继续搜索。</li>
+<li>水平方向搜索时，发现跳点（格子2）， 加入openlist, 并停止该方向的搜索。垂直、对角线方向都遇到阻档停止该方向的搜索。本轮搜索结束。现在openset中有格子5、格子2，从中找出F值最小的格子2，从openset中删除，加入到closedset中。</li>
+<li>以格子2为当前格子继续搜索，水平方向遇到边界停止。</li>
+<li>对角线方向搜索第1步时，水平分量遇到跳点为终点(根据跳点规则3：起点、终点都是跳点)，加入openset。垂直分量遇到跳点（格子4：右邻居为阻档，右上为非阻档）加入openset。</li>
+<li>虽然终点已经加入openset，但按照规则，本轮搜索仍未结束。继沿对角线及其水平垂直分量搜索，在本例中，它们都遇到边界而结束。</li>
+<li>从openset中取出F值最小的格子，这里是终点，此时搜索结束。路径为点起-&gt;格子1-&gt;格子2-&gt;格子3-&gt;终点。</li>
+</ol>
+<h4 id="四、优化"><a href="#四、优化" class="headerlink" title="四、优化"></a>四、优化</h4><h5 id="1-1-两点是否可达"><a href="#1-1-两点是否可达" class="headerlink" title="1.1 两点是否可达"></a>1.1 两点是否可达</h5><p>游戏地图中，并非所有格子之间都是连通（可达）的，如下图所示，区域S和区域E之间是不可达，如果我们不对地图预处理，那么玩家每次尝试从区域S到区域E我们都会寻一次路才知道是否可达，这显然不科学，因为只有在两点可达时才有寻路的必要。通常地图中出现点之间不可达（两点为非阻档）是策划配错了，因此我们可以把不可达的信息提前告知策划。<br><img width="400" height="200" src="/images/jps/area_unreachable.png"></p>
+<p>地图上的格子可以看成是非连通图，利用图的广度优先算法来遍历区域内的格子并对其编号，所有连通的格子编号相同。寻路时先判断起点与终点的区域编号是否相同，相同则可达，否则不可达。方法如下：<br>遍历地图上的所有格子，并作如下操作：</p>
+<ol>
+<li>num（区域编号）+ 1</li>
+<li>如果当前格子是阻档或已访问过的，则跳过。</li>
+<li>利用广度优搜索算法遍历当前格子四个邻居，并把当前格子及其邻居标记为已访问过，域编号设为num.</li>
+<li>重复执行1 ~ 3步，直到地图所有格子都被访问过。</li>
+</ol>
+<h5 id="1-2-剪枝算法"><a href="#1-2-剪枝算法" class="headerlink" title="1.2 剪枝算法"></a>1.2 剪枝算法</h5><p>对角线搜索时可能遇到一些中间跳点，这们只有承接作用，不具备扩展作用，加入openset会增加扩展次数，因此我们在搜索时不需要把它们加入openset，只需要把它们后继节点的parent设置为当前跳点的parent即可。下面我们通过一个例子来看下剪枝细节。（这里只讨论对角线方向，直线方向同理）<br><img width="400" height="200" src="/images/jps/prune.png"></p>
+<h6 id="1-2-1-不剪枝的搜索流程"><a href="#1-2-1-不剪枝的搜索流程" class="headerlink" title="1.2.1 不剪枝的搜索流程"></a>1.2.1 不剪枝的搜索流程</h6><ol>
+<li>把起点0加入openset, 从openset移除F值最小的格子，加入到closedset。</li>
+<li>继续搜索格子0的水平方向(遇到跳点)、垂直方向(遇到边界)、对角线方向（遇到跳点），并把跳点1、10加入openset。</li>
+<li>从openset中删除F值最小的格子(格子1)，加入closedset，把格子1作为当前节点继续搜索。</li>
+<li>重复步骤2、3，直至此搜索完成。</li>
+</ol>
+<p>最终路径为：0、1、2、3、4、5、6</p>
+<h6 id="1-2-2-剪枝搜索流程："><a href="#1-2-2-剪枝搜索流程：" class="headerlink" title="1.2.2 剪枝搜索流程："></a>1.2.2 剪枝搜索流程：</h6><ol>
+<li>把起点0加入openset, 从openset移除F值最小的格子，加入到closedset。</li>
+<li>搜索格子0的水平方向(遇到跳点10)、垂直方向(遇到边界)、对角线方向（遇到跳点1），把格子10加入openset，因为格子1是格子0对角线方向的节点（中间节点），不加入openset。</li>
+<li>搜索格子1的水平（遇到跳点9）、垂直（遇到边界）、对角线（遇到跳点2）方向，把格子9的parent设置为格子1的parent（格子0）。格子2是格子1对角线方向的节点（中间节点），不加入openset。</li>
+<li>继续沿对角线方向搜索直至完成。</li>
+</ol>
+<p>搜索结束后，current为格子0，从openlist中出取F值最小的格子6，此时路径为：0，6。从图上可以看出格子0到格子6不能通过直线到达。因此我们需要在这两个格子之间插入拐点。</p>
+<h6 id="1-2-3-拐点插入规则"><a href="#1-2-3-拐点插入规则" class="headerlink" title="1.2.3 拐点插入规则"></a>1.2.3 拐点插入规则</h6><ul>
+<li>设剪枝后相邻两个跳点jp(i)、jp(i+1)的x、y坐标差的绝对值为(dx,dy)，若dx或dy等于0，说明垂直或水平方向可达；若dx==dy说明对角线方向可达。不需要加入跳点。</li>
+<li>如果dx，dy不相等，则需要加入中间拐点，拐点位置为，jp(i)沿对角线方向走min(dx,dy)。</li>
+</ul>
+<p>根据拐点添加规则，本例中我们在跳点1，6之间加入跳点5，所以最终路径为：0，5，6。</p>
+<h5 id="1-3-路径优化"><a href="#1-3-路径优化" class="headerlink" title="1.3 路径优化"></a>1.3 路径优化</h5><p>有时两点之间本可以走直线的，但根据JPS的寻路特性，可能在两点间加入”多余”的拐点，我们希望的是尽量走直线。如下图所示：<br><img width="400" height="200" src="/images/jps/opti_path.png"> </p>
+<p>从起点出发（绿色格子），对角线搜索到灰格子处时，沿水平分量搜索遇到跳点（红色，即终点），由跳点定义1可知，灰色格子也是跳点。最终路径为：绿色格子、灰色格子、红色格子。从图中可以看出，从起点到终点是可以走直线的，但JPS找出的路径却多了中间节点，这在游戏中的表现可能比较诡异。因此我们需要优化JPS搜索到的路径，方法如下：<br>假如：JPS得到的路径为 A、B、C、D、E、F、G。我们需要判断，A到C是否直线可达，如果可达；继续判断A到D是否可达，如果不可达，则删除路径点B，当前路径点为A、C、D、E、F、G。继续判断C到E是否可以，以此类推直到终点。<br>那么如何判断两格子之间是否直线可达呢？<br>这里可以通过bresenham算法判断，如果直线上有格子是阻档，则不可达，否则可达。</p>
+<p>参考<br>腾讯游戏开发精粹<br><a href="https://zerowidth.com/2013/a-visual-explanation-of-jump-point-search.html" target="_blank" rel="noopener">https://zerowidth.com/2013/a-visual-explanation-of-jump-point-search.html</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/07/03/golang/netpoll/" rel="next" title="Golang Netpoll 实现原理">
+                <i class="fa fa-chevron-left"></i> Golang Netpoll 实现原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/09/06/protocal/tcpip_param/" rel="prev" title="TCP/IP 调优">
+                TCP/IP 调优 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">15</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、概念"><span class="nav-text">一、概念</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-强迫邻居"><span class="nav-text">1.1 强迫邻居</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-跳点"><span class="nav-text">1.2 跳点</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、算法流程"><span class="nav-text">二、算法流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、寻路实例"><span class="nav-text">三、寻路实例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#四、优化"><span class="nav-text">四、优化</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-两点是否可达"><span class="nav-text">1.1 两点是否可达</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-剪枝算法"><span class="nav-text">1.2 剪枝算法</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-1-不剪枝的搜索流程"><span class="nav-text">1.2.1 不剪枝的搜索流程</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-2-剪枝搜索流程："><span class="nav-text">1.2.2 剪枝搜索流程：</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-2-3-拐点插入规则"><span class="nav-text">1.2.3 拐点插入规则</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-路径优化"><span class="nav-text">1.3 路径优化</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.2"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.2"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
