@@ -96,22 +96,22 @@
 
 
 
-  <meta name="description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
+  <meta name="description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="游戏中常用的碰撞检测">
 <meta property="og:url" content="http://yoursite.com/2022/07/31/game/collision-detection/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
+<meta property="og:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-y.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-circle.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-sector1.png">
-<meta property="og:image" content="http://yoursite.com/images/collision/collision-sector1.png">
-<meta property="og:updated_time" content="2022-08-14T09:55:36.295Z">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-sector2.png">
+<meta property="og:updated_time" content="2022-08-14T10:23:54.735Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="游戏中常用的碰撞检测">
-<meta name="twitter:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
+<meta name="twitter:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
 <meta name="twitter:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
 
 
@@ -426,40 +426,29 @@
 
       
         <p>本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。</p>
-<h4 id="一、矩形物体间的碰撞检测"><a href="#一、矩形物体间的碰撞检测" class="headerlink" title="一、矩形物体间的碰撞检测"></a>一、矩形物体间的碰撞检测</h4><p>矩形之间的碰撞检测方法有很多,比如：</p>
+<h4 id="一、矩形物体间的碰撞检测"><a href="#一、矩形物体间的碰撞检测" class="headerlink" title="一、矩形物体间的碰撞检测"></a>一、矩形物体间的碰撞检测</h4><p>矩形之间的碰撞检测方法有很多，比如：</p>
 <ul>
 <li>检测矩形A是否有顶点在矩形B中</li>
 <li>检测矩形A的边是否与矩形B的边相交</li>
-<li>直接通过两矩形的坐标判断<br>方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。</li>
+<li>直接通过两矩形的坐标判断</li>
 </ul>
-<p>原理：<br>排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相交。</p>
-<ol>
-<li><p>水平方向<br>B.max(x) &lt; A.min(x) 或 B.min(x) &gt; A.max(x) 则水平方向上不相交，如下图所示</p>
-<img width="500" height="200" src="/images/collision/collision-rectangle-x.png">
-</li>
-<li><p>垂直方向<br>B.max(y) &lt; A.min(y) 或 B.min(y) &gt; A.max(y) 则垂直方向上不相交，如下图所示</p>
-<img width="500" height="200" src="/images/collision/collision-rectangle-y.png">
-
-
-</li>
-</ol>
-<h4 id="二、圆形与长方形的碰撞检测"><a href="#二、圆形与长方形的碰撞检测" class="headerlink" title="二、圆形与长方形的碰撞检测"></a>二、圆形与长方形的碰撞检测</h4><p>假设矩形R的长为l宽为w,圆C的圆心为o(x,y)，半径为r。把矩形的长、宽分别向外扩张长度r得到新的矩形R1。</p>
-<ol>
-<li>只要圆心在R1外则可以认为R与C不相交。</li>
-<li>若o在R1内：分两种情况：<br>情况1：o在R1的左上、左下、右上、右下四个角的矩形中(简称顶点矩形)，则需判断当前顶点是否在圆内，若在圆内则相交，反之不相交。<br>情况2：若o不在顶点矩形内，则圆与矩形相交。<img width="500" height="200" src="/images/collision/collision-rectangle-circle.png">
-还有另一种更简单的方法检查圆与矩形的碰撞：对于圆形可以取其包围矩形来计算，这样就变成了矩形与矩形之间的碰撞。缺点是不够准确。
-
+<p>方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。</p>
+<a id="more"></a>
+<p>原理：<br>排除两个矩形在水平方向和垂直方向不相交的情况，其余情况均为相交。</p>
+<h5 id="1-1-水平方向"><a href="#1-1-水平方向" class="headerlink" title="1.1 水平方向"></a>1.1 水平方向</h5><p>B.max(x) &lt; A.min(x) 或 B.min(x) &gt; A.max(x) 则水平方向上不相交，如下图所示<br><img width="600" height="300" src="/images/collision/collision-rectangle-x.png"></p>
+<h5 id="1-2-垂直方向"><a href="#1-2-垂直方向" class="headerlink" title="1.2 垂直方向"></a>1.2 垂直方向</h5><p>B.max(y) &lt; A.min(y) 或 B.min(y) &gt; A.max(y) 则垂直方向上不相交，如下图所示<br><img width="600" height="300" src="/images/collision/collision-rectangle-y.png"></p>
+<h4 id="二、矩形与圆形的碰撞检测"><a href="#二、矩形与圆形的碰撞检测" class="headerlink" title="二、矩形与圆形的碰撞检测"></a>二、矩形与圆形的碰撞检测</h4><p>假设矩形R的长为l宽为w，圆C的圆心为o(x,y)，半径为r。把矩形的长、宽分别向外扩张长度r得到新的矩形R1。</p>
+<h5 id="1-1-只要圆心在R1外则可以认为R与C不相交"><a href="#1-1-只要圆心在R1外则可以认为R与C不相交" class="headerlink" title="1.1 只要圆心在R1外则可以认为R与C不相交"></a>1.1 只要圆心在R1外则可以认为R与C不相交</h5><h5 id="1-2-若o在R1内：分两种情况："><a href="#1-2-若o在R1内：分两种情况：" class="headerlink" title="1.2 若o在R1内：分两种情况："></a>1.2 若o在R1内：分两种情况：</h5><ul>
+<li>情况1：o在R1的左上、左下、右上、右下四个角的矩形(简称顶点矩形)中，则需判断当前顶点是否在圆内，若在圆内则相交，反之不相交。</li>
+<li>情况2：若o不在顶点矩形内，则圆与矩形相交。<img width="500" height="200" src="/images/collision/collision-rectangle-circle.png">
 
 </li>
-</ol>
+</ul>
+<p>还有另一种更简单的方法检查圆与矩形的碰撞：对于圆形可以取其包围矩形来计算，这样就变成了矩形与矩形之间的碰撞。缺点是不够准确。</p>
 <h4 id="三、扇形物体与圆形的碰撞检测"><a href="#三、扇形物体与圆形的碰撞检测" class="headerlink" title="三、扇形物体与圆形的碰撞检测"></a>三、扇形物体与圆形的碰撞检测</h4><p>扇形与圆形相交大概分为3种情况：</p>
-<ol>
-<li>扇形圆心在圆内：扇形圆心到圆的圆心距离 &lt; r</li>
-<li>圆的圆心在扇形的向量之间<br>若圆半径+扇形半径 &lt; 圆心之间的距离则相交。可以通过点与直线关系判断圆的圆心是否在两向量之间。下图所示：只需要判断点c点在l1右边、l2左边即可。<img width="500" height="500" src="/images/collision/collision-sector1.png"></li>
-<li>扇形任意一条边与圆相交：求直线与圆是否相交既可。<a href="https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm" target="_blank" rel="noopener">方法</a><img width="500" height="500" src="/images/collision/collision-sector1.png">
+<h5 id="1-1-扇形圆心在圆内：扇形圆心到圆的圆心距离-lt-圆的半径"><a href="#1-1-扇形圆心在圆内：扇形圆心到圆的圆心距离-lt-圆的半径" class="headerlink" title="1.1 扇形圆心在圆内：扇形圆心到圆的圆心距离 &lt; 圆的半径"></a>1.1 扇形圆心在圆内：扇形圆心到圆的圆心距离 &lt; 圆的半径</h5><h5 id="1-2-圆的圆心在扇形的向量之间"><a href="#1-2-圆的圆心在扇形的向量之间" class="headerlink" title="1.2 圆的圆心在扇形的向量之间"></a>1.2 圆的圆心在扇形的向量之间</h5><p>若圆半径+扇形半径 &lt; 两圆心之间的距离则相交。可以通过点与直线关系判断圆的圆心是否在两向量之间。下图所示：只需要判断点c是否在l1右边、l2左边即可。<br><img width="200" height="200" src="/images/collision/collision-sector1.png"></p>
+<h5 id="1-3-扇形任意一条边与圆相交：求直线与圆是否相交既可。方法"><a href="#1-3-扇形任意一条边与圆相交：求直线与圆是否相交既可。方法" class="headerlink" title="1.3 扇形任意一条边与圆相交：求直线与圆是否相交既可。方法"></a>1.3 扇形任意一条边与圆相交：求直线与圆是否相交既可。<a href="https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm" target="_blank" rel="noopener">方法</a></h5><img width="200" height="200" src="/images/collision/collision-sector2.png">
 
-</li>
-</ol>
 <p>参考：《游戏开发的数学和物理》</p>
 
       
@@ -633,7 +622,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、矩形物体间的碰撞检测"><span class="nav-text">一、矩形物体间的碰撞检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、圆形与长方形的碰撞检测"><span class="nav-text">二、圆形与长方形的碰撞检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、扇形物体与圆形的碰撞检测"><span class="nav-text">三、扇形物体与圆形的碰撞检测</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、矩形物体间的碰撞检测"><span class="nav-text">一、矩形物体间的碰撞检测</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-水平方向"><span class="nav-text">1.1 水平方向</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-垂直方向"><span class="nav-text">1.2 垂直方向</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、矩形与圆形的碰撞检测"><span class="nav-text">二、矩形与圆形的碰撞检测</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-只要圆心在R1外则可以认为R与C不相交"><span class="nav-text">1.1 只要圆心在R1外则可以认为R与C不相交</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-若o在R1内：分两种情况："><span class="nav-text">1.2 若o在R1内：分两种情况：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、扇形物体与圆形的碰撞检测"><span class="nav-text">三、扇形物体与圆形的碰撞检测</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-1-扇形圆心在圆内：扇形圆心到圆的圆心距离-lt-圆的半径"><span class="nav-text">1.1 扇形圆心在圆内：扇形圆心到圆的圆心距离 &lt; 圆的半径</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-2-圆的圆心在扇形的向量之间"><span class="nav-text">1.2 圆的圆心在扇形的向量之间</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#1-3-扇形任意一条边与圆相交：求直线与圆是否相交既可。方法"><span class="nav-text">1.3 扇形任意一条边与圆相交：求直线与圆是否相交既可。方法</span></a></li></ol></li></ol></div>
             
 
           </div>
