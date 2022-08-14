@@ -96,23 +96,23 @@
 
 
 
-  <meta name="description" content="本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。 一、矩形区域有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：">
+  <meta name="description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
 <meta property="og:type" content="article">
-<meta property="og:title" content="AOE技能目标选择器">
-<meta property="og:url" content="http://yoursite.com/2020/01/21/game/aoe-skill-selector/index.html">
+<meta property="og:title" content="游戏中常用的碰撞检测">
+<meta property="og:url" content="http://yoursite.com/2022/07/31/game/collision-detection/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。 一、矩形区域有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：">
+<meta property="og:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://yoursite.com/images/aoe/relative-coordinate.png">
-<meta property="og:image" content="http://yoursite.com/images/aoe/polor-coordiate.png">
-<meta property="og:image" content="http://yoursite.com/images/aoe/polor-to-cartesian.png">
-<meta property="og:image" content="http://yoursite.com/images/aoe/point-in-sector.png">
-<meta property="og:image" content="http://yoursite.com/images/aoe/sin-cos-tan-graph.png">
-<meta property="og:updated_time" content="2020-07-20T13:34:46.057Z">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-y.png">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-circle.png">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-sector1.png">
+<meta property="og:image" content="http://yoursite.com/images/collision/collision-sector1.png">
+<meta property="og:updated_time" content="2022-08-14T09:55:36.295Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="AOE技能目标选择器">
-<meta name="twitter:description" content="本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。 一、矩形区域有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：">
-<meta name="twitter:image" content="http://yoursite.com/images/aoe/relative-coordinate.png">
+<meta name="twitter:title" content="游戏中常用的碰撞检测">
+<meta name="twitter:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多,比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。  原理：排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相">
+<meta name="twitter:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
 
 
 
@@ -120,7 +120,7 @@
 
   
   
-  <link rel="canonical" href="http://yoursite.com/2020/01/21/game/aoe-skill-selector/">
+  <link rel="canonical" href="http://yoursite.com/2022/07/31/game/collision-detection/">
 
 
 
@@ -130,7 +130,7 @@
   };
 </script>
 
-  <title>AOE技能目标选择器 | lifan's blog</title>
+  <title>游戏中常用的碰撞检测 | lifan's blog</title>
   
 
 
@@ -329,7 +329,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/21/game/aoe-skill-selector/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2022/07/31/game/collision-detection/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content>
@@ -346,7 +346,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">AOE技能目标选择器
+          <h1 class="post-title" itemprop="name headline">游戏中常用的碰撞检测
 
               
             
@@ -372,7 +372,7 @@
                 
               
 
-              <time title="创建时间：2020-01-21 22:56:00" itemprop="dateCreated datePublished" datetime="2020-01-21T22:56:00+08:00">2020-01-21</time>
+              <time title="创建时间：2022-07-31 17:05:00" itemprop="dateCreated datePublished" datetime="2022-07-31T17:05:00+08:00">2022-07-31</time>
             
 
             
@@ -425,30 +425,42 @@
       
 
       
-        <p>本文介绍2种常用的AOE技能目标选择器实现方法，矩形区域和扇形区域。</p>
-<h4 id="一、矩形区域"><a href="#一、矩形区域" class="headerlink" title="一、矩形区域"></a>一、矩形区域</h4><p>有技能描述是“对长距离路径上的敌人造成伤害，并给予状态5秒”。长距离路径上的敌人其实就是施法者到直接目标之间所构成矩形区域中的敌人。这个需求可以化成判断点是否在矩形区域内。如下图所示：<br><img width="500" height="200" src="/images/aoe/relative-coordinate.png"></p>
-<a id="more"></a>
-<p>如何判断点在矩形内呢？<br>如上图所示c1为蓝色区域矩形，t1为矩形中的一个点<br>最简单的方法是判断<code>t1.x &gt;= min(c1.x) &amp;&amp; t1.x &lt;= max(c1.x) &amp;&amp; t1.y &gt;= min(c1.y) &amp;&amp; t1.y &lt;= max(c1.y)</code>为<code>true</code>则点在矩形内，否则在矩形外。但是这种方法只有在矩形平行坐标轴时成立，如果攻击者方向不平行坐标轴如图中C2。我们用上面的方法计算时t2与矩形C2的位置关系时，发现它在矩形中，这显然不正确。那该如何计算t2与矩形C2的位置关系呢?<br>如果把施法者p到受击者p2之间的向量看成是新的x轴方向（虚线所示的相对坐标系），则被测试点与矩形的关系就可以用上术方法来判断。下面介绍如何把t2的坐标转换到pp2为x轴的相对坐标。<br>思路：通过求出被测点t2的极坐标，再通过极坐标转直角坐标就得到了t2的相对坐标，如下：</p>
+        <p>本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。</p>
+<h4 id="一、矩形物体间的碰撞检测"><a href="#一、矩形物体间的碰撞检测" class="headerlink" title="一、矩形物体间的碰撞检测"></a>一、矩形物体间的碰撞检测</h4><p>矩形之间的碰撞检测方法有很多,比如：</p>
 <ul>
-<li><p>极坐标定义：该坐标系中任意位置可由一个夹角和一段相对原点(极点)的距离来表示，例如pt可以表示为(|pt|, t2pp2度数)</p>
-<img width="350" height="200" src="/images/aoe/polor-coordiate.png">
-在本例中，已知p和t2的坐标，则|pt2|的值为径向坐标；因为已知三角形pt2p2的三边，根据余弦定理可求出角t2pp2的角度，即极坐标的角坐标
-</li>
-<li><p>根据余弦定理：<code>a^2 = b^2 + c^2 - 2bccosθ</code><br>得：<code>cosθ = b^2 + c^2 - a^2 / 2bc</code><br>其中：<code>a</code>为<code>t2p2, b为pt2, c为pp2,θ为角t2pp2</code></p>
-</li>
+<li>检测矩形A是否有顶点在矩形B中</li>
+<li>检测矩形A的边是否与矩形B的边相交</li>
+<li>直接通过两矩形的坐标判断<br>方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。</li>
 </ul>
-<p>根据极坐标与直角坐标转换公式可得：<br>假设t2的相对坐标为<code>(tr.x, tr.y)</code>则
-<code>tr.x = pt2costθ</code><br><code>tr.y = sqrt(pt2^2 - tr.x^2)</code><br>注：pt2就是公式中的ρ<br><img width="350" height="200" src="/images/aoe/polor-to-cartesian.png"></p>
-<p>知道相对坐标，用平行坐标轴的算法很容易求出点是否是矩形内。</p>
-<h4 id="二、扇形区域"><a href="#二、扇形区域" class="headerlink" title="二、扇形区域"></a>二、扇形区域</h4><p>判断点是否在扇形中的方法很多，本文介绍通过点积来判断:<br>点积代数定义：<code>a·b = a.x * b.x + a.y * b.y</code><br>点积几何定义：<code>a·b = |a||b|cosθ</code> (θ为ab之前的夹角)<br>如下图所行，u为施法者朝向，t为被攻击者坐标，θ为扇形角度的1/2, 下面我们要判断点t是否在扇形区域内。<br><img width="350" height="200" src="/images/aoe/point-in-sector.png"><br>步骤：</p>
-<ul>
-<li>首先判断ot的距离是否&lt;扇形半径，若是进入第2步</li>
-<li>判断u与ot之前的夹角θt是否&lt;θ,方法如下：<br>因为cosθ在[0,π]区间单调递减，如下图所示：<img width="500" height="200" src="/images/aoe/sin-cos-tan-graph.png">
+<p>原理：<br>排除两个矩形在水平方向和垂直方向上不相交的情况，其余情况均为相交。</p>
+<ol>
+<li><p>水平方向<br>B.max(x) &lt; A.min(x) 或 B.min(x) &gt; A.max(x) 则水平方向上不相交，如下图所示</p>
+<img width="500" height="200" src="/images/collision/collision-rectangle-x.png">
+</li>
+<li><p>垂直方向<br>B.max(y) &lt; A.min(y) 或 B.min(y) &gt; A.max(y) 则垂直方向上不相交，如下图所示</p>
+<img width="500" height="200" src="/images/collision/collision-rectangle-y.png">
+
 
 </li>
-</ul>
-<p>所以只需要判断<code>cosθt &gt; costθ</code>即可。u点和t点的坐标是已知的，因此根据点积公式很容易求出<code>cosθt、cosθ</code>。</p>
-<p>参考：<a href="https://blog.csdn.net/kebu12345678/article/details/80724336" target="_blank" rel="noopener">https://blog.csdn.net/kebu12345678/article/details/80724336</a><br>参考：<a href="https://blog.csdn.net/u012175089/article/details/50850250" target="_blank" rel="noopener">https://blog.csdn.net/u012175089/article/details/50850250</a><br>参考：<a href="https://www.cnblogs.com/miloyip/archive/2013/04/19/3029852.html" target="_blank" rel="noopener">https://www.cnblogs.com/miloyip/archive/2013/04/19/3029852.html</a><br>参考：<a href="https://wuzhiwei.net/vector_in_games/" target="_blank" rel="noopener">https://wuzhiwei.net/vector_in_games/</a><br>参考：<a href="https://www.gameres.com/493846.html" target="_blank" rel="noopener">https://www.gameres.com/493846.html</a></p>
+</ol>
+<h4 id="二、圆形与长方形的碰撞检测"><a href="#二、圆形与长方形的碰撞检测" class="headerlink" title="二、圆形与长方形的碰撞检测"></a>二、圆形与长方形的碰撞检测</h4><p>假设矩形R的长为l宽为w,圆C的圆心为o(x,y)，半径为r。把矩形的长、宽分别向外扩张长度r得到新的矩形R1。</p>
+<ol>
+<li>只要圆心在R1外则可以认为R与C不相交。</li>
+<li>若o在R1内：分两种情况：<br>情况1：o在R1的左上、左下、右上、右下四个角的矩形中(简称顶点矩形)，则需判断当前顶点是否在圆内，若在圆内则相交，反之不相交。<br>情况2：若o不在顶点矩形内，则圆与矩形相交。<img width="500" height="200" src="/images/collision/collision-rectangle-circle.png">
+还有另一种更简单的方法检查圆与矩形的碰撞：对于圆形可以取其包围矩形来计算，这样就变成了矩形与矩形之间的碰撞。缺点是不够准确。
+
+
+</li>
+</ol>
+<h4 id="三、扇形物体与圆形的碰撞检测"><a href="#三、扇形物体与圆形的碰撞检测" class="headerlink" title="三、扇形物体与圆形的碰撞检测"></a>三、扇形物体与圆形的碰撞检测</h4><p>扇形与圆形相交大概分为3种情况：</p>
+<ol>
+<li>扇形圆心在圆内：扇形圆心到圆的圆心距离 &lt; r</li>
+<li>圆的圆心在扇形的向量之间<br>若圆半径+扇形半径 &lt; 圆心之间的距离则相交。可以通过点与直线关系判断圆的圆心是否在两向量之间。下图所示：只需要判断点c点在l1右边、l2左边即可。<img width="500" height="500" src="/images/collision/collision-sector1.png"></li>
+<li>扇形任意一条边与圆相交：求直线与圆是否相交既可。<a href="https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm" target="_blank" rel="noopener">方法</a><img width="500" height="500" src="/images/collision/collision-sector1.png">
+
+</li>
+</ol>
+<p>参考：《游戏开发的数学和物理》</p>
 
       
     </div>
@@ -479,8 +491,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/01/13/golang/mutex-rwmutex/" rel="next" title="Golang 互斥锁、读写锁实现">
-                <i class="fa fa-chevron-left"></i> Golang 互斥锁、读写锁实现
+              <a href="/2021/09/26/golang/channel/" rel="next" title="Channel 工作原理及源码分析">
+                <i class="fa fa-chevron-left"></i> Channel 工作原理及源码分析
               </a>
             
           </div>
@@ -488,10 +500,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2020/02/15/game/behavior-tree/" rel="prev" title="游戏中的AI-行为树">
-                游戏中的AI-行为树 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -625,7 +633,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、矩形区域"><span class="nav-text">一、矩形区域</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、扇形区域"><span class="nav-text">二、扇形区域</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#一、矩形物体间的碰撞检测"><span class="nav-text">一、矩形物体间的碰撞检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#二、圆形与长方形的碰撞检测"><span class="nav-text">二、圆形与长方形的碰撞检测</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#三、扇形物体与圆形的碰撞检测"><span class="nav-text">三、扇形物体与圆形的碰撞检测</span></a></li></ol></div>
             
 
           </div>
