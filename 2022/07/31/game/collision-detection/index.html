@@ -96,22 +96,22 @@
 
 
 
-  <meta name="description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
+  <meta name="description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断">
 <meta property="og:type" content="article">
 <meta property="og:title" content="游戏中常用的碰撞检测">
 <meta property="og:url" content="http://yoursite.com/2022/07/31/game/collision-detection/index.html">
 <meta property="og:site_name" content="lifan&#39;s blog">
-<meta property="og:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
+<meta property="og:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-y.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-rectangle-circle.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-sector1.png">
 <meta property="og:image" content="http://yoursite.com/images/collision/collision-sector2.png">
-<meta property="og:updated_time" content="2022-08-14T10:23:54.735Z">
+<meta property="og:updated_time" content="2022-08-14T10:36:11.343Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="游戏中常用的碰撞检测">
-<meta name="twitter:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断  方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。">
+<meta name="twitter:description" content="本文介绍3种游戏开发中常见形状间的碰撞检测方法。坐标原点均为左下角。 一、矩形物体间的碰撞检测矩形之间的碰撞检测方法有很多，比如：  检测矩形A是否有顶点在矩形B中 检测矩形A的边是否与矩形B的边相交 直接通过两矩形的坐标判断">
 <meta name="twitter:image" content="http://yoursite.com/images/collision/collision-rectangle-x.png">
 
 
@@ -430,10 +430,9 @@
 <ul>
 <li>检测矩形A是否有顶点在矩形B中</li>
 <li>检测矩形A的边是否与矩形B的边相交</li>
-<li>直接通过两矩形的坐标判断</li>
+<li>直接通过两矩形的坐标判断<a id="more"></a></li>
 </ul>
 <p>方法1可以通过点与直线的关系求得，方法2可以通过向量叉乘求得。下面介绍通过坐标方式来求两个矩形的交点。</p>
-<a id="more"></a>
 <p>原理：<br>排除两个矩形在水平方向和垂直方向不相交的情况，其余情况均为相交。</p>
 <h5 id="1-1-水平方向"><a href="#1-1-水平方向" class="headerlink" title="1.1 水平方向"></a>1.1 水平方向</h5><p>B.max(x) &lt; A.min(x) 或 B.min(x) &gt; A.max(x) 则水平方向上不相交，如下图所示<br><img width="600" height="300" src="/images/collision/collision-rectangle-x.png"></p>
 <h5 id="1-2-垂直方向"><a href="#1-2-垂直方向" class="headerlink" title="1.2 垂直方向"></a>1.2 垂直方向</h5><p>B.max(y) &lt; A.min(y) 或 B.min(y) &gt; A.max(y) 则垂直方向上不相交，如下图所示<br><img width="600" height="300" src="/images/collision/collision-rectangle-y.png"></p>
